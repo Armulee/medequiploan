@@ -1,7 +1,20 @@
 node_modules/
+.next/
+out/
+build/
 .env
-data/.encryption_key
+.env*.local
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+.DS_Store
+
+# รูปที่อัปโหลดตอน dev บนเครื่องตัวเอง (production ใช้ Vercel Blob)
 uploads/id_cards/*
 uploads/illness_photos/*
 !uploads/id_cards/.gitkeep
 !uploads/illness_photos/.gitkeep
+
+# ข้อมูล JSON ของระบบเดิม (ย้ายไป PostgreSQL แล้ว)
+data/*.json
+data/.encryption_key
