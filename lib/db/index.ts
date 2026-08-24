@@ -1,17 +1,37 @@
 import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle as drizzleNeon, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as schema from './schema';
 
-// Neon's HTTP driver instead of a TCP pool: each serverless invocation makes a
-// stateless HTTP call, so concurrent functions can't exhaust Postgres'
-// connection limit the way a per-instance pg.Pool would.
-if (!process.env.DATABASE_URL) {
+const url = process.env.DATABASE_URL;
+if (!url) {
   throw new Error(
-    'ไม่พบ DATABASE_URL — ตั้งค่าใน .env (dev) หรือ Vercel Project Settings (production)'
+    'ไม่พบ DATABASE_URL — ตั้งค่าใน .env.local (dev) หรือ Vercel Project Settings (production)'
   );
 }
 
-const sql = neon(process.env.DATABASE_URL);
+// Neon in production, plain node-postgres when pointed at a local server, so
+// `npm run dev` works against a Postgres on your own machine without any code
+// change. Neon's HTTP driver is deliberate: each serverless invocation makes a
+// stateless call, so concurrent functions can't exhaust the connection limit
+// the way a per-instance TCP pool would.
+const isNeon = /\.neon\.tech|\.neon\.build/.test(url) || process.env.DB_DRIVER === 'neon';
 
-export const db = drizzle(sql, { schema });
+export const db = (
+  isNeon
+    ? drizzleNeon(neon(url), { schema })
+    : drizzlePg(new Pool({ connectionString: url }), { schema })
+) as unknown as NeonHttpDatabase<typeof schema>;
+
+/**
+ * `db.execute()` hands back `{ rows }` on node-postgres but an array-like on
+ * neon-http. Normalise so callers don't have to care which driver is live.
+ */
+export function rowsOf<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[];
+  const rows = (result as { rows?: unknown })?.rows;
+  return Array.isArray(rows) ? (rows as T[]) : [];
+}
+
 export { schema };

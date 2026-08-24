@@ -1,9 +1,37 @@
 import { eq, sql } from 'drizzle-orm';
-import { db } from './db';
+import { db, rowsOf } from './db';
 import { equipment, records, type LoanRecord } from './db/schema';
 import { logAction } from './audit';
 import { ApiError } from './api';
 import type { SessionUser } from './session';
+
+/**
+ * `RETURNING *` on a raw statement comes back with the database's snake_case
+ * column names, not the camelCase shape Drizzle's query builder produces. Map
+ * it explicitly — reading `.recordId` off the raw row silently yields
+ * undefined, which is how the borrow audit entry ended up with a blank
+ * target_id and how displayStatus() stopped ever seeing a due date.
+ */
+type RawRecordRow = Record<string, unknown>;
+
+function toLoanRecord(raw: RawRecordRow): LoanRecord {
+  const date = (v: unknown) => (v == null ? null : new Date(v as string));
+  return {
+    recordId: String(raw.record_id),
+    borrowerId: String(raw.borrower_id),
+    equipmentId: String(raw.equipment_id),
+    borrowDate: date(raw.borrow_date) as Date,
+    dueDate: date(raw.due_date),
+    returnDate: date(raw.return_date),
+    status: String(raw.status),
+    conditionOnReturn: String(raw.condition_on_return ?? ''),
+    handledBy: raw.handled_by == null ? null : String(raw.handled_by),
+    handledByName: String(raw.handled_by_name ?? ''),
+    receivedBy: raw.received_by == null ? null : String(raw.received_by),
+    receivedByName: String(raw.received_by_name ?? ''),
+    source: String(raw.source),
+  };
+}
 
 // Shared by the staff-direct borrow flow and by approving a public request, so
 // stock counts and the audit trail stay consistent whichever path created them.
@@ -48,8 +76,8 @@ export async function issueBorrow(input: {
     RETURNING *
   `);
 
-  const row = (result.rows as LoanRecord[])[0];
-  if (!row) {
+  const raw = rowsOf<RawRecordRow>(result)[0];
+  if (!raw) {
     // Either the equipment id doesn't exist or every unit is already out.
     const [item] = await db
       .select({ id: equipment.equipmentId })
@@ -58,6 +86,8 @@ export async function issueBorrow(input: {
     if (!item) throw new ApiError('ไม่พบอุปกรณ์', 404);
     throw new ApiError('อุปกรณ์นี้ถูกยืมหมดแล้ว ไม่สามารถยืมได้', 409);
   }
+
+  const row = toLoanRecord(raw);
 
   await logAction({
     actor: handledBy,
@@ -103,8 +133,8 @@ export async function returnBorrow(input: {
     SELECT * FROM closed
   `);
 
-  const row = (result.rows as LoanRecord[])[0];
-  if (!row) {
+  const raw = rowsOf<RawRecordRow>(result)[0];
+  if (!raw) {
     const [existing] = await db
       .select({ status: records.status })
       .from(records)
@@ -112,6 +142,8 @@ export async function returnBorrow(input: {
     if (!existing) throw new ApiError('ไม่พบรายการยืม', 404);
     throw new ApiError('รายการนี้คืนแล้ว', 409);
   }
+
+  const row = toLoanRecord(raw);
 
   await logAction({
     actor: receivedBy,
