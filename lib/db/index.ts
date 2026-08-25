@@ -4,10 +4,24 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
-const url = process.env.DATABASE_URL;
+// Vercel's Neon/Postgres integrations inject the connection string under
+// different names depending on which one the store was created from, so accept
+// any of them rather than failing to boot on a deploy that is actually wired up
+// correctly. DATABASE_URL wins when it is set explicitly.
+//
+// Prefer the POOLED string: the serverless driver opens a connection per
+// invocation, and the unpooled endpoint will run out under concurrency.
+const url =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.POSTGRES_URL_NON_POOLING;
+
 if (!url) {
   throw new Error(
-    'ไม่พบ DATABASE_URL — ตั้งค่าใน .env.local (dev) หรือ Vercel Project Settings (production)'
+    'ไม่พบ connection string ของฐานข้อมูล — ตั้ง DATABASE_URL ใน .env.local (dev) ' +
+      'หรือเชื่อม Neon store เข้ากับ project ใน Vercel (production)'
   );
 }
 

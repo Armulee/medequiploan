@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "check-env": "tsx scripts/check-env.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {
