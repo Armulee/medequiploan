@@ -1,6 +1,6 @@
-import { asc } from 'drizzle-orm';
+import { asc, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { equipment } from '@/lib/db/schema';
+import { equipment, records } from '@/lib/db/schema';
 import { ApiError, json, requireRole, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
 import { equipmentView } from '@/lib/views';
@@ -8,8 +8,18 @@ import { equipmentView } from '@/lib/views';
 // Left public: the public request form needs the catalogue to show what can be
 // borrowed. No borrower data is exposed here.
 export const GET = route(async () => {
-  const rows = await db.select().from(equipment).orderBy(asc(equipment.equipmentId));
-  return json({ equipment: rows.map(equipmentView) });
+  const [rows, loans] = await Promise.all([
+    db.select().from(equipment).orderBy(asc(equipment.equipmentId)),
+    // One grouped count for the whole catalogue rather than a query per item.
+    db
+      .select({ equipmentId: records.equipmentId, onLoan: sql<number>`count(*)::int` })
+      .from(records)
+      .where(ne(records.status, 'คืนแล้ว'))
+      .groupBy(records.equipmentId),
+  ]);
+
+  const onLoanById = new Map(loans.map((l) => [l.equipmentId, Number(l.onLoan)]));
+  return json({ equipment: rows.map((e) => equipmentView(e, onLoanById.get(e.equipmentId) ?? 0)) });
 });
 
 export const POST = route(async (req: Request) => {

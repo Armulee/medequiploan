@@ -287,14 +287,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 
 .footer-note { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 22px 10px; }
 
+/* The base rule must come BEFORE the media query: a media query adds no
+   specificity, so a later `display: none` beat the `display: flex` inside it
+   and the desktop nav never appeared at any width. */
+.app-nav-desktop { display: none; }
 @media (min-width: 700px) {
   .tabbar { display: none; }
   .app-nav-desktop { display: flex; gap: 6px; }
 }
-.app-nav-desktop { display: none; }
 .app-nav-desktop button {
   background: none; color: white; opacity: 0.85; padding: 9px 16px; border-radius: 999px; font-size: 0.9rem;
   box-shadow: none;
+  display: inline-flex; align-items: center; gap: 7px;
 }
 .app-nav-desktop button.active { background: rgba(255,255,255,0.22); opacity: 1; }
 .app-nav-desktop button:hover { background: rgba(255,255,255,0.15); }
@@ -427,4 +431,87 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 28px 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;
+}
+
+/* ---------- Added by the React port ---------- */
+/* The React port uses a two-column row (detail left, action right) rather than
+   the original stacked .list-item, so it needs its own rules — the classes
+   below did not exist in the ported stylesheet. */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.list-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 15px; background: var(--orange-bg);
+  transition: box-shadow 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.list-row:hover { box-shadow: var(--shadow); border-color: var(--orange-light); }
+.list-row .title { font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.list-row .sub { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+@media (max-width: 560px) {
+  /* Stack on narrow screens so a long equipment name doesn't squeeze the
+     action button down to an untappable sliver. */
+  .list-row { flex-direction: column; align-items: stretch; }
+}
+
+
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.card-head h1 { margin-bottom: 0; }
+
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 16px; }
+
+.picked-box {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--orange-light); border: 1.5px solid var(--border);
+  margin-bottom: 4px;
+}
+.picked-box .title { font-weight: 600; }
+.picked-box .sub { font-size: 0.85rem; color: var(--text-muted); }
+
+.inline-form {
+  padding: 14px; margin-bottom: 16px;
+  background: var(--orange-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.stat-inline {
+  padding: 10px 14px; margin: 12px 0;
+  background: var(--green-bg); border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+}
+
+/* Stat tiles: label + value, no delta (there is no prior period to compare to). */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat-tile {
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  background: var(--orange-bg); border: 1.5px solid var(--border);
+}
+.stat-tile.stat-warn { background: var(--yellow-bg); border-color: #F2DCB4; }
+.stat-tile.stat-danger { background: var(--red-bg); border-color: #F5CFCF; }
+.stat-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value {
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+  font-size: 1.75rem; font-weight: 600; line-height: 1.1;
+}
+.stat-unit { font-size: 0.8rem; font-weight: 400; color: var(--text-muted); margin-left: 6px; }
+
+/* Chart. Text wears text tokens; only the columns carry the brand hue. */
+.chart-figure { margin: 8px 0 0; }
+.chart-svg { width: 100%; height: auto; display: block; }
+.chart-bar { fill: var(--orange); }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-tick { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
+.chart-value { fill: var(--text); font-size: 12px; font-weight: 600; font-family: inherit; }
+
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(38, 32, 25, 0.45);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal { max-width: 460px; width: 100%; margin: 0; max-height: 90vh; overflow-y: auto; }
+
+button.list-row {
+  width: 100%; text-align: left; font: inherit; color: inherit;
+  background: none; cursor: pointer;
 }

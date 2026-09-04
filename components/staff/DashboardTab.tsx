@@ -1,0 +1,136 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Alert from '@/components/Alert';
+import Icon from '@/components/Icon';
+import { api } from '@/app/lib/api';
+import { thDate } from '@/app/lib/format';
+import MonthlyChart from './MonthlyChart';
+
+type Dashboard = {
+  summary: {
+    active_loans: number;
+    overdue_loans: number;
+    pending_requests: number;
+    low_stock_items: number;
+    total_borrowers: number;
+    total_equipment: number;
+  };
+  low_stock: Array<{ equipment_id: string; name: string; available_qty: number; total_qty: number }>;
+  overdue: Array<{
+    record_id: string;
+    due_date: string;
+    borrower_name: string;
+    equipment_name: string;
+    days_overdue: number;
+  }>;
+  monthly: Array<{ month: string; borrows: number }>;
+};
+
+export default function DashboardTab() {
+  const [data, setData] = useState<Dashboard | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api<Dashboard>('/api/dashboard')
+      .then(setData)
+      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดข้อมูลภาพรวมไม่สำเร็จ'));
+  }, []);
+
+  if (error) return <div className="card"><Alert kind="error">{error}</Alert></div>;
+  if (!data) return <div className="card"><div className="empty-state">กำลังโหลด...</div></div>;
+
+  const s = data.summary;
+
+  return (
+    <>
+      <div className="card">
+        <h1>ภาพรวมระบบ</h1>
+
+        <div className="stat-row">
+          <StatTile label="กำลังยืมอยู่" value={s.active_loans} unit="รายการ" />
+          <StatTile label="เกินกำหนดคืน" value={s.overdue_loans} unit="รายการ" tone={s.overdue_loans > 0 ? 'danger' : undefined} />
+          <StatTile label="คำขอรออนุมัติ" value={s.pending_requests} unit="คำขอ" tone={s.pending_requests > 0 ? 'warn' : undefined} />
+          <StatTile label="อุปกรณ์ใกล้หมด" value={s.low_stock_items} unit="รายการ" tone={s.low_stock_items > 0 ? 'warn' : undefined} />
+        </div>
+
+        <div className="stat-row" style={{ marginTop: 10 }}>
+          <StatTile label="ผู้ยืมที่ลงทะเบียน" value={s.total_borrowers} unit="คน" />
+          <StatTile label="อุปกรณ์ทั้งหมด" value={s.total_equipment} unit="ชิ้น" />
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>จำนวนการยืมรายเดือน</h2>
+        <p style={{ color: 'var(--text-muted)', marginTop: -6 }}>6 เดือนล่าสุด</p>
+        <MonthlyChart data={data.monthly} />
+      </div>
+
+      <div className="card">
+        <h2>
+          <Icon name="alert" size={18} stroke="var(--red)" /> เกินกำหนดคืน
+        </h2>
+        {data.overdue.length === 0 ? (
+          <div className="empty-state">ไม่มีรายการเกินกำหนด</div>
+        ) : (
+          <div className="list">
+            {data.overdue.map((o) => (
+              <div className="list-row" key={o.record_id}>
+                <div>
+                  <div className="title">{o.equipment_name}</div>
+                  <div className="sub">
+                    {o.borrower_name} · ครบกำหนด {thDate(o.due_date)}
+                  </div>
+                </div>
+                <span className="badge badge-red">เกิน {o.days_overdue} วัน</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>อุปกรณ์ใกล้หมด</h2>
+        {data.low_stock.length === 0 ? (
+          <div className="empty-state">สต็อกทุกรายการอยู่ในเกณฑ์ปกติ</div>
+        ) : (
+          <div className="list">
+            {data.low_stock.map((e) => (
+              <div className="list-row" key={e.equipment_id}>
+                <div>
+                  <div className="title">{e.name}</div>
+                  <div className="sub">
+                    คงเหลือ {e.available_qty} จากทั้งหมด {e.total_qty}
+                  </div>
+                </div>
+                <span className="badge badge-yellow">ใกล้หมด</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  unit,
+  tone,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  tone?: 'warn' | 'danger';
+}) {
+  return (
+    <div className={`stat-tile${tone ? ` stat-${tone}` : ''}`}>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">
+        {value.toLocaleString('th-TH')}
+        <span className="stat-unit">{unit}</span>
+      </div>
+    </div>
+  );
+}

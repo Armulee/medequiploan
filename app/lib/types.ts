@@ -13,6 +13,7 @@ export type Equipment = {
   available_qty: number;
   low_stock_threshold: number;
   borrowed_qty: number;
+  repair_qty: number;
   low_stock: boolean;
 };
 

@@ -28,7 +28,16 @@ export function borrowerFullView(b: Borrower) {
   };
 }
 
-export function equipmentView(e: Equipment) {
+/**
+ * `onLoan` is the number of units actually out with a borrower, counted from
+ * open loan records. Deriving "borrowed" as total - available conflates real
+ * loans with units pulled off the shelf for repair, so sending two wheelchairs
+ * to the workshop made the stock page claim two more people had borrowed one.
+ * Whatever is missing beyond the open loans is out for repair.
+ */
+export function equipmentView(e: Equipment, onLoan?: number) {
+  const missing = e.totalQty - e.availableQty;
+  const borrowed = onLoan ?? missing;
   return {
     equipment_id: e.equipmentId,
     name: e.name,
@@ -36,7 +45,8 @@ export function equipmentView(e: Equipment) {
     total_qty: e.totalQty,
     available_qty: e.availableQty,
     low_stock_threshold: e.lowStockThreshold,
-    borrowed_qty: e.totalQty - e.availableQty,
+    borrowed_qty: borrowed,
+    repair_qty: Math.max(0, missing - borrowed),
     low_stock: e.availableQty <= e.lowStockThreshold,
   };
 }
