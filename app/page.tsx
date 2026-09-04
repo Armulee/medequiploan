@@ -76,8 +76,6 @@ const FEATURES = [
   },
 ];
 
-const BADGES = ['ไม่มีค่าใช้จ่าย', 'ใช้งานง่าย เหมาะกับทุกวัย', 'ข้อมูลถูกเข้ารหัสปลอดภัย'];
-
 export default function LandingPage() {
   return (
     <>
@@ -134,14 +132,6 @@ export default function LandingPage() {
               <a href="#how" className="btn btn-outline btn-lg">
                 ดูวิธีใช้งาน
               </a>
-            </div>
-            <div className="hero-badges">
-              {BADGES.map((b) => (
-                <span key={b}>
-                  <Icon name="check" size={16} strokeWidth={2.5} />
-                  {b}
-                </span>
-              ))}
             </div>
           </div>
         </div>

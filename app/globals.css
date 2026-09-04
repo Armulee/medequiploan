@@ -384,47 +384,48 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   .hero-scrim {
     background: linear-gradient(
       180deg,
-      rgba(255, 246, 240, 0.97) 0%,
-      rgba(255, 246, 240, 0.94) 44%,
-      rgba(255, 246, 240, 0.10) 70%,
-      rgba(255, 246, 240, 0) 84%
+      rgba(255, 246, 240, 0.94) 0%,
+      rgba(255, 246, 240, 0.88) 38%,
+      rgba(255, 246, 240, 0.08) 62%,
+      rgba(255, 246, 240, 0) 76%
     );
   }
   .hero-inner { padding: 36px 20px 40px; }
   .hero-copy { max-width: none; }
-
-  /* The tick row is the one line that outlives the wash: it sits at the very
-     bottom of the text block, which on a landscape crop is already over the
-     wheelchair. Give each one its own chip rather than dragging the whole
-     gradient down over the photograph to save three short phrases. */
-  .hero-badges { gap: 8px; }
-  .hero-badges span {
-    background: rgba(255, 246, 240, 0.92);
-    padding: 5px 12px 5px 10px;
-    border-radius: 999px;
-  }
 }
 
 /* On a phone the portrait crop takes over. Its height is tied to the viewport
    width because the crop is: the clear wall the text sits on is a fraction of
    the picture, not a fixed number of pixels. */
 @media (max-width: 640px) {
-  /* Tall enough that the clear wall in the portrait crop still reaches past
-     the tick row — measured, not guessed: at 390px the text block ends around
-     600px, and 250vw puts the wall's lower edge just below it. */
-  .hero { min-height: min(250vw, 1000px); }
+  /* Shorter than before: with the tick row gone the text ends around 470px
+     at 390px wide, so the frame no longer has to reach 1000px to keep it on
+     clear wall — and the equipment comes into view sooner. */
+  .hero { min-height: min(215vw, 900px); }
   .hero-photo img { object-position: center bottom; }
+  /* Barely a veil. The wall in this crop is already an even, bright cream:
+     body text clears 10:1 against it unaided, and only the muted lead needs
+     any help at all. A heavy wash here buys nothing and flattens the photo. */
   .hero-scrim {
     background: linear-gradient(
       180deg,
-      rgba(255, 246, 240, 0.97) 0%,
-      rgba(255, 246, 240, 0.96) 56%,
-      rgba(255, 246, 240, 0.15) 76%,
-      rgba(255, 246, 240, 0) 90%
+      rgba(255, 246, 240, 0.70) 0%,
+      rgba(255, 246, 240, 0.52) 40%,
+      rgba(255, 246, 240, 0) 62%
     );
   }
   .hero-inner { padding: 28px 20px 32px; }
   .lead-tail { display: none; }
+}
+
+/* The stock list the photograph displaced. Same panel, now a band of its own
+   directly below the hero, so the header's #stock link still lands on it. */
+.stock-band { max-width: 1080px; margin: 0 auto; padding: 32px 24px 0; }
+.stock-band .hero-panel { padding: 22px 26px; }
+.stock-band .stock-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0 28px;
 }
 
 .hero-eyebrow {
@@ -442,9 +443,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   font-size: 1.08rem; color: var(--text-muted); max-width: 46ch; margin: 0 0 26px;
 }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
-.hero-badges { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted); }
-.hero-badges span { display: flex; align-items: center; gap: 6px; }
-.hero-badges svg { width: 16px; height: 16px; stroke: var(--green); }
 
 .hero-panel {
   background: white; border: 1px solid var(--border); border-radius: 20px;
