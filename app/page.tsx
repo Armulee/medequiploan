@@ -61,9 +61,11 @@ const STEPS = [
 
 const FEATURES = [
   {
-    icon: 'file',
-    title: 'ลงทะเบียนครั้งเดียว',
-    body: 'ระบบจำข้อมูลผู้ยืมไว้ ครั้งต่อไปยืมได้เร็วขึ้นโดยไม่ต้องกรอกซ้ำ',
+    // There is no registration step and the form never pre-fills — a repeat
+    // borrower types everything again. The old copy promised both.
+    icon: 'requests',
+    title: 'ไม่ต้องลงทะเบียน',
+    body: 'กรอกแบบฟอร์มแล้วส่งได้เลย ไม่ต้องสร้างบัญชี ไม่ต้องจำรหัสผ่าน',
   },
   {
     icon: 'swap',
