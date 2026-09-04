@@ -2,6 +2,8 @@
  * Run before deploying (or in CI) to catch a half-configured environment
  * while it is still cheap to fix. `npx tsx scripts/check-env.ts`
  */
+import './load-env';
+
 const problems: string[] = [];
 
 const dbUrl =

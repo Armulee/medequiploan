@@ -6,6 +6,7 @@
  * passwords before it could answer a request and kept resurrecting the default
  * admin account.
  */
+import './load-env';
 import bcrypt from 'bcryptjs';
 import { db } from '../lib/db';
 import { equipment, users } from '../lib/db/schema';
