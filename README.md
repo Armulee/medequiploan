@@ -2,49 +2,55 @@
 
 เว็บแอปสำหรับศูนย์ยืม-คืนกายอุปกรณ์การแพทย์ ครอบคลุมการลงทะเบียนผู้ยืม การยืม-คืน คำขอยืมจากผู้ใช้ทั่วไป การนับสต็อก และ audit log
 
-**การจัดเก็บข้อมูล**: ไฟล์ JSON local (ในโฟลเดอร์ `data/`) แทนการเชื่อมต่อ Google Sheets/Drive ตามที่ระบุ — รูปภาพเก็บในโฟลเดอร์ `uploads/` บนเครื่อง server เอง ไม่ใช่ Google Drive
+**การจัดเก็บข้อมูล**: PostgreSQL (Neon) สำหรับข้อมูล และ Vercel Blob สำหรับรูปภาพ deploy บน Vercel
+วิธีติดตั้งดูที่ [`DEPLOY.md`](DEPLOY.md)
 
-## เริ่มต้นใช้งาน
+## เริ่มต้นใช้งาน (รันบนเครื่องตัวเอง)
 
 ```bash
 npm install
-npm run seed     # สร้างผู้ใช้เริ่มต้น + อุปกรณ์ตัวอย่าง (รันครั้งเดียว หรือรันซ้ำได้อย่างปลอดภัย)
-npm start        # เปิดเซิร์ฟเวอร์ที่ http://localhost:3000
+cp .env.example .env.local   # แล้วแก้ค่าให้ครบ (ดู DEPLOY.md ขั้นตอนที่ 3)
+npm run check-env            # ตรวจว่าตั้งค่าครบก่อน
+npm run db:migrate           # สร้างตารางในฐานข้อมูล
+npm run seed                 # สร้างผู้ใช้ + อุปกรณ์ตัวอย่าง
+npm run dev                  # http://localhost:3000
 ```
 
-เปิดเบราว์เซอร์ไปที่ `http://localhost:3000` สำหรับหน้าแรก (สาธารณะ), `http://localhost:3000/request.html` สำหรับฟอร์มคำขอยืม (ไม่ต้อง login) หรือ `http://localhost:3000/staff.html` สำหรับหน้าเจ้าหน้าที่ (ต้อง login)
+| หน้า | URL | ต้อง login |
+|---|---|---|
+| หน้าแรก | `/` | ไม่ต้อง |
+| ฟอร์มคำขอยืม | `/request` | ไม่ต้อง |
+| ระบบเจ้าหน้าที่ | `/staff` | ต้อง |
 
-**บัญชีเริ่มต้น** (เปลี่ยนรหัสผ่านทันทีก่อนใช้งานจริง — ดูหัวข้อ "การจัดการผู้ใช้" ด้านล่าง):
-- แอดมิน: `admin` / `admin1234`
-- เจ้าหน้าที่: `staff` / `staff1234`
+**บัญชีเริ่มต้น**: username `admin` และ `staff` · รหัสผ่านคือค่าที่ตั้งไว้ใน
+`SEED_ADMIN_PASSWORD` / `SEED_STAFF_PASSWORD` ตอนรัน seed — ระบบไม่มีรหัสผ่านเริ่มต้นให้
+เพื่อไม่ให้มีบัญชีที่เดารหัสได้หลุดขึ้น production
 
-ตั้งค่ารหัสผ่านตอน seed เองได้ผ่าน `.env` — คัดลอก `.env.example` เป็น `.env` แล้วแก้ `SEED_ADMIN_PASSWORD` / `SEED_STAFF_PASSWORD` ก่อนรัน `npm run seed`
+## Deploy ขึ้นใช้งานจริง
 
-## Deploy บน Vercel (พรีวิว UI/UX เท่านั้น)
-
-โปรเจกต์นี้ deploy บน Vercel ได้ทันที (`api/index.js` + `vercel.json` พร้อมใช้แล้ว — แค่ import repo นี้ที่ [vercel.com/new](https://vercel.com/new) หรือรัน `vercel --prod`) **แต่ข้อมูลที่บันทึกบน Vercel เป็นข้อมูลชั่วคราวเท่านั้น** เพราะ Vercel เป็น serverless ไม่มีดิสก์ถาวร (ระบบ redirect การเขียนไฟล์ไปที่ `/tmp` อัตโนมัติเมื่อรันบน Vercel ดู `server/lib/db.js`) ข้อมูลจะรีเซ็ตทุกครั้งที่ cold start เหมาะสำหรับ**ดูดีไซน์/ทดลองใช้งาน**เท่านั้น ไม่เหมาะกับการเก็บข้อมูลผู้ป่วยจริง (และ Vercel ไม่มี data center ในไทยตามข้อกำหนด PDPA ที่ตั้งไว้) — **สำหรับใช้งานจริงให้ใช้แนวทาง VPS ใน `DEPLOY.md`**
-
-ถ้าต้องการให้ข้อมูลบน Vercel คงอยู่ถาวรจริง ต้องเพิ่ม 2 อย่าง: (1) ฐานข้อมูลจริง เช่น Supabase/Vercel Postgres แทนไฟล์ JSON และ (2) ตั้งค่า `SESSION_SECRET` กับ `ENCRYPTION_KEY` เป็น environment variables ในหน้า Vercel Project Settings (ไม่งั้นจะสุ่มใหม่ทุก cold start ทำให้ login/ข้อมูลเข้ารหัสเดิมใช้ไม่ได้)
+ดู [`DEPLOY.md`](DEPLOY.md) — Vercel + Neon (Singapore) + Vercel Blob
 
 ## โครงสร้างโปรเจกต์
 
 ```
-data/               ไฟล์ JSON เก็บข้อมูลทั้งหมด (borrowers, equipment, records, requests, users, audit_log)
-uploads/
-  id_cards/          รูปบัตรประชาชนที่แนบตอนลงทะเบียน
-  illness_photos/    รูปอาการป่วย
-server/
-  server.js          Express app entrypoint
-  seed.js             สร้างข้อมูลเริ่มต้น
-  lib/                helper: db (อ่าน/เขียน JSON แบบ queue กันชนกัน), crypto (เข้ารหัสเลขบัตรฯ), validate, borrow, audit, upload
-  middleware/auth.js   ตรวจสอบ session/สิทธิ์
-  routes/              API endpoints แยกตามโมดูล
-public/
-  index.html               หน้าแรก (landing page) สาธารณะ — แนะนำบริการ + ดูสต็อกเบื้องต้น
-  staff.html / js/app.js   แอปฝั่งเจ้าหน้าที่ (ต้อง login)
-  request.html / js/request.js   ฟอร์มคำขอยืมสาธารณะ (ไม่ต้อง login)
-  css/style.css            ธีมส้ม (#FF6C1D) + ฟอนต์ Kanit/Noto Sans Thai มือถือเป็นหลัก
-deploy/setup-ubuntu.sh      สคริปต์ติดตั้งพื้นฐานบน VPS Ubuntu (ดู DEPLOY.md)
+app/
+  page.tsx              หน้าแรก (สาธารณะ)
+  request/              ฟอร์มคำขอยืม (สาธารณะ ไม่ต้อง login)
+  staff/                แอปเจ้าหน้าที่ (React, tab-based)
+  api/**/route.ts       REST API ทั้งหมด
+  globals.css           ธีมส้ม #FF6C1D + ฟอนต์ Kanit / Noto Sans Thai
+components/
+  Icon.tsx              ไอคอน inline SVG
+  staff/                component ของแต่ละแท็บ
+lib/
+  db/schema.ts          Drizzle schema
+  db/index.ts           เลือก driver: Neon HTTP บน production, node-postgres บน localhost
+  borrow.ts             business logic ยืม/คืน (statement เดียว เพื่อความถูกต้องของสต็อก)
+  crypto.ts             AES-256-GCM เลขบัตรประชาชน + keyed hash ไว้ค้นหา
+  session.ts            iron-session · rate-limit.ts · storage.ts (Vercel Blob)
+  api.ts                route() wrapper, requireAuth(), requireRole()
+drizzle/                ไฟล์ migration (.sql)
+scripts/                migrate · seed · check-env
 ```
 
 ## สิ่งที่ระบบทำ (ตามสเปกแต่ละโมดูล)
@@ -59,46 +65,20 @@ deploy/setup-ubuntu.sh      สคริปต์ติดตั้งพื้�
 
 **4.5 ประวัติ / Audit log** — แท็บ "ประวัติ" แยก 3 มุมมอง: ประวัติผู้ยืมรายคน (พร้อมสรุป % คืนตรงเวลา), ประวัติอุปกรณ์รายชิ้น, และ Audit log แสดงทุกการกระทำพร้อมชื่อเจ้าหน้าที่ที่ทำรายการ
 
-## การตัดสินใจที่ทำไปแล้ว (ตอบหัวข้อ 6 ของสเปก)
+## ความปลอดภัยและ PDPA
 
-ระบบนี้สร้างขึ้นตามที่ผู้ใช้เลือกไว้ตอนเริ่มพัฒนา หากต้องการเปลี่ยนภายหลังสามารถแก้โค้ดได้ตามจุดที่ระบุ:
+- **เลขบัตรประชาชน** เข้ารหัส AES-256-GCM ก่อนบันทึกเสมอ · หน้ารายการเห็นแบบปิดบัง (`110xxxxxxx366`)
+  · ค้นหาด้วย keyed hash ไม่ต้องถอดรหัสทั้งตาราง
+- **รูปบัตร ปชช. / รูปอาการป่วย** เป็นข้อมูลสุขภาพ เสิร์ฟผ่าน `/api/files/...` ที่ตรวจ session เท่านั้น
+  ไม่มี public URL หลุดออกไป · นามสกุลไฟล์มาจาก MIME type ไม่ใช่ชื่อไฟล์ที่อัปโหลด
+- **ทุกการกระทำที่มีผลต่อข้อมูล** ถูกบันทึกใน audit log พร้อมชื่อผู้ทำรายการ
+- **Rate limit** ที่หน้า login (กันเดารหัสผ่าน) และฟอร์มคำขอสาธารณะ (กันสแปม)
+- **ข้อมูลอยู่นอกประเทศไทย** (สิงคโปร์) — ถ้าต้องการให้อยู่ในไทย ดูหัวข้อใน `DEPLOY.md`
 
-1. **สิทธิ์ผู้ใช้**: 2 ระดับ — **แอดมิน** (จัดการอุปกรณ์/ผู้ใช้ + สิทธิ์ทุกอย่างของเจ้าหน้าที่) และ **เจ้าหน้าที่** (ลงทะเบียน, ยืม-คืน, อนุมัติคำขอ, ดูข้อมูลเต็มรวม PII) ผู้ยืมทั่วไปไม่มีบัญชี ส่งได้แค่คำขอผ่านฟอร์มสาธารณะ — ปรับได้ที่ `server/middleware/auth.js` และ `requireRole()` ในแต่ละ route
-2. **การเข้ารหัส PII**: เข้ารหัสเลขบัตรประชาชนแบบ AES-256-GCM ที่ฝั่ง server ก่อนเขียนลงไฟล์ (`server/lib/crypto.js`) — รูปภาพ (บัตร ปชช./อาการป่วย) ยังเก็บเป็นไฟล์ธรรมดาในโฟลเดอร์ `uploads/` และเข้าถึงได้เฉพาะผู้ที่ login แล้วเท่านั้น (route `/uploads` มี `requireAuth`) — หากต้องการเข้ารหัสไฟล์รูปด้วย แจ้งเพิ่มได้
-3. **PDPA**: ระบบเข้ารหัสเลขบัตร ปชช. และจำกัดการเข้าถึงข้อมูล/รูปภาพเฉพาะผู้ login แล้วตามที่สเปกแนะนำ แต่**ยังไม่ได้ทำ**เรื่อง data retention policy (ลบข้อมูลอัตโนมัติเมื่อพ้นระยะ), consent form, หรือ audit เต็มรูปแบบตามกฎหมาย PDPA — แนะนำให้ปรึกษาผู้เชี่ยวชาญด้านกฎหมายก่อนใช้งานจริงกับผู้ป่วย
-4. **Deploy**: ระบบนี้เป็น Node.js app ธรรมดา รันได้ทุกที่ที่รองรับ Node (VPS ของตัวเอง, Railway, Render ฯลฯ) **ข้อควรระวัง**: เนื่องจากข้อมูลเก็บเป็นไฟล์ JSON บน disk ของ server เครื่องเดียว จึงเหมาะกับการใช้งานจากเครื่อง/หน่วยงานเดียว ไม่รองรับ multi-server หรือ auto-scaling — หากข้อมูลมีปริมาณมากขึ้นหรือต้องการเข้าถึงพร้อมกันจากหลายที่ ควรพิจารณาย้ายไปใช้ฐานข้อมูลจริง (PostgreSQL/SQLite) ในอนาคต
+## สิ่งที่ยังไม่ได้ทำ
 
-## การจัดการผู้ใช้ (เพิ่ม/เปลี่ยนรหัสผ่านเจ้าหน้าที่)
-
-ยังไม่มีหน้าจอจัดการผู้ใช้ในเวอร์ชันนี้ (ไม่ได้ระบุไว้ชัดเจนในสเปก) เพิ่ม/แก้ไขผู้ใช้ได้ชั่วคราวโดยรันสคริปต์เล็ก ๆ เช่น:
-
-```js
-// add-user.js
-const bcrypt = require('bcryptjs');
-const { db } = require('./server/lib/db');
-(async () => {
-  const users = await db.read('users');
-  users.push({
-    user_id: db.nextId(users, 'U'),
-    username: 'staff2',
-    password_hash: bcrypt.hashSync('รหัสผ่านใหม่', 10),
-    role: 'staff', // หรือ 'admin'
-    name: 'ชื่อเจ้าหน้าที่',
-    created_at: new Date().toISOString(),
-  });
-  await db.write('users', users);
-  console.log('เพิ่มผู้ใช้แล้ว');
-})();
-```
-รันด้วย `node add-user.js` — แจ้งได้หากต้องการหน้าจอจัดการผู้ใช้เต็มรูปแบบในเวอร์ชันถัดไป
-
-## ข้อมูลสำรอง (Backup)
-
-เนื่องจากข้อมูลทั้งหมดอยู่ในไฟล์ JSON ธรรมดา การสำรองข้อมูลทำได้ง่ายด้วยการคัดลอกทั้งโฟลเดอร์ `data/` และ `uploads/` ไปเก็บไว้ที่อื่นเป็นระยะ (เช่น cron job รายวัน) — แนะนำให้ตั้งการสำรองอัตโนมัติก่อนใช้งานจริง เพราะไม่มีระบบ replication เหมือนฐานข้อมูลจริง
-
-## หมายเหตุความปลอดภัยเพิ่มเติมก่อนใช้งานจริง
-
-- เปลี่ยนรหัสผ่าน `admin`/`staff` เริ่มต้นทันที
-- ตั้งค่า `SESSION_SECRET` ใน `.env` เป็นค่าสุ่มที่ยาวและไม่ซ้ำใคร
-- หากใช้งานผ่านอินเทอร์เน็ตจริง ต้องรันหลัง HTTPS (reverse proxy เช่น Caddy/Nginx) และตั้ง `NODE_ENV=production` กับ `TRUST_PROXY=1` เพื่อให้ cookie ปลอดภัยขึ้น
-- ไฟล์ `data/.encryption_key` และ `.env` **ห้าม commit ขึ้น git หรือแชร์ให้ใคร** (มีอยู่ใน `.gitignore` แล้ว)
+- หน้าจอจัดการผู้ใช้ (เพิ่ม/ลบ/รีเซ็ตรหัสผ่านเจ้าหน้าที่) — schema มีคอลัมน์ `active` รออยู่แล้ว
+- หน้าเปลี่ยนรหัสผ่านของตัวเอง
+- data retention / auto-delete policy ตาม PDPA
+- automated test suite
+- รองรับหลายภาษา (ตอนนี้เป็นภาษาไทยล้วน)
