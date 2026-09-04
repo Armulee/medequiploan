@@ -304,7 +304,20 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .app-nav-desktop button:hover { background: rgba(255,255,255,0.15); }
 
 /* ================= Public landing page ================= */
+/* Landing page only — the other pages use .app-header. It floats over the
+   hero photograph with no background at all, and SiteHeader raises
+   --header-bg once it has scrolled past its own height and would otherwise
+   sit on top of the headline. */
 .site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 30;
+  background: rgb(255 246 240 / var(--header-bg, 0));
+  box-shadow:
+    0 1px 0 rgb(240 221 203 / var(--header-bg, 0)),
+    0 2px 10px rgb(184 66 12 / calc(0.07 * var(--header-bg, 0)));
+}
+.site-header-inner {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 24px;
   max-width: 1080px; margin: 0 auto;
@@ -321,13 +334,16 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 }
 .site-header .brand .logo-mark svg { width: 20px; height: 20px; }
 .site-header nav a {
-  color: var(--text-muted); font-weight: 600; font-size: 0.92rem; margin-left: 22px;
+  color: var(--text); font-weight: 600; font-size: 0.92rem; margin-left: 22px;
   white-space: nowrap;
 }
 .site-header nav a:hover { color: var(--orange-dark); text-decoration: none; }
-@media (max-width: 640px) {
-  .site-header { flex-wrap: wrap; gap: 10px; padding: 16px 20px; }
-  .site-header nav { display: flex; gap: 16px; width: 100%; justify-content: center; }
+@media (max-width: 700px) {
+  .site-header-inner { flex-wrap: wrap; gap: 4px; padding: 12px 20px 10px; }
+  .site-header nav {
+    display: flex; width: 100%; justify-content: center;
+    flex-wrap: wrap; gap: 2px 14px;
+  }
   .site-header nav a { margin-left: 0; font-size: 0.85rem; }
 }
 
@@ -337,7 +353,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 560px;
+  min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(700px circle at 85% -10%, rgba(255,138,71,0.22), transparent 55%),
     radial-gradient(500px circle at 5% 90%, rgba(255,108,29,0.14), transparent 55%),
@@ -369,9 +386,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 }
 .hero-inner {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 1080px; margin: 0 auto;
-  padding: 56px 24px 64px;
+  /* Clears the fixed bar at the top and the scroll cue at the foot. */
+  padding: 110px 24px 150px;
 }
 .hero-copy { max-width: 48%; }
 
@@ -379,7 +398,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
    text takes the top of the frame and the equipment keeps the bottom, so the
    picture stays one continuous scene rather than a band under a text block. */
 @media (max-width: 1023px) {
-  .hero { min-height: 700px; justify-content: flex-start; }
+  .hero { justify-content: flex-start; }
   .hero-photo img { object-position: center 62%; }
   .hero-scrim {
     background: linear-gradient(
@@ -390,7 +409,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
       rgba(255, 246, 240, 0) 76%
     );
   }
-  .hero-inner { padding: 36px 20px 40px; }
+  .hero-inner { padding: 116px 20px 150px; }
   .hero-copy { max-width: none; }
 }
 
@@ -398,10 +417,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
    width because the crop is: the clear wall the text sits on is a fraction of
    the picture, not a fixed number of pixels. */
 @media (max-width: 640px) {
-  /* Shorter than before: with the tick row gone the text ends around 470px
-     at 390px wide, so the frame no longer has to reach 1000px to keep it on
-     clear wall — and the equipment comes into view sooner. */
-  .hero { min-height: min(215vw, 900px); }
   .hero-photo img { object-position: center bottom; }
   /* Barely a veil. The wall in this crop is already an even, bright cream:
      body text clears 10:1 against it unaided, and only the muted lead needs
@@ -414,8 +429,60 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
       rgba(255, 246, 240, 0) 62%
     );
   }
-  .hero-inner { padding: 28px 20px 32px; }
+  .hero-inner { padding: 124px 20px 150px; }
   .lead-tail { display: none; }
+}
+
+/* The picture does not stop, it dissolves: a wash to the page's own
+   background with the blur ramping in behind it, so the hero hands over to
+   the page instead of ending on a hard edge. The gradient lives on ::before
+   because a mask on .hero-cue itself would fade its own words out too. */
+.hero-cue {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 80px 20px 20px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.hero-cue::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 246, 240, 0) 0%,
+    rgba(255, 246, 240, 0.55) 46%,
+    rgba(255, 246, 240, 0.92) 78%,
+    var(--orange-bg) 100%
+  );
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 62%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 62%);
+}
+.hero-cue:hover { text-decoration: none; color: var(--orange-dark); }
+.hero-cue svg { animation: cue-bob 2.2s var(--ease) infinite; }
+@keyframes cue-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-cue svg { animation: none; }
+}
+
+/* The fixed bar would otherwise land on top of whatever an anchor scrolls to.
+   Two values because the bar is taller on a phone, where the nav takes a row
+   of its own. */
+.stock-band, .section[id] { scroll-margin-top: 96px; }
+@media (max-width: 700px) {
+  .stock-band, .section[id] { scroll-margin-top: 124px; }
 }
 
 /* The stock list the photograph displaced. Same panel, now a band of its own

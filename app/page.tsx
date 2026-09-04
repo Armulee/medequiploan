@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
 import HeroPhoto from '@/components/landing/HeroPhoto';
+import SiteHeader from '@/components/landing/SiteHeader';
 import StockPreview from '@/components/landing/StockPreview';
 import { EQUIPMENT_KINDS, SITE_DESCRIPTION, SITE_NAME, absolute, siteUrl } from '@/lib/site';
 import { landingPageJsonLd } from '@/lib/structured-data';
@@ -89,20 +90,7 @@ export default function LandingPage() {
         }}
       />
 
-      <header className="site-header">
-        <div className="brand">
-          <span className="logo-mark">
-            <Icon name="heart" size={24} />
-          </span>
-          ศูนย์ยืม-คืนกายอุปกรณ์
-        </div>
-        <nav>
-          <a href="#how">วิธีใช้งาน</a>
-          <a href="#stock">อุปกรณ์ที่มี</a>
-          <Link href="/tracking">ติดตามคำขอ</Link>
-          <Link href="/staff">เจ้าหน้าที่</Link>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <section className="hero">
         <HeroPhoto />
@@ -135,6 +123,13 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* A plain anchor: the smooth scroll is the stylesheet's, so this
+            still works with no JavaScript. */}
+        <a href="#stock" className="hero-cue">
+          <span>เลื่อนลงเพื่อดูอุปกรณ์</span>
+          <Icon name="chevron-down" size={26} strokeWidth={2.5} />
+        </a>
       </section>
 
       {/* Displaced from the hero by the photograph, but still what #stock in
@@ -192,10 +187,7 @@ export default function LandingPage() {
         </Link>
       </div>
 
-      <footer className="site-footer">
-        ศูนย์ยืม-คืนกายอุปกรณ์การแพทย์ · สำหรับเจ้าหน้าที่{' '}
-        <Link href="/staff">เข้าสู่ระบบที่นี่</Link>
-      </footer>
+      <footer className="site-footer">ศูนย์ยืม-คืนกายอุปกรณ์การแพทย์</footer>
     </>
   );
 }
