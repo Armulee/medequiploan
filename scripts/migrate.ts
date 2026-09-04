@@ -5,8 +5,13 @@
  * installed by default on macOS, and pasting a migration into a web SQL editor
  * is easy to get half-right.
  *
- * Every migration is written to be safe to re-run (CREATE ... IF NOT EXISTS),
- * so this is idempotent.
+ * Applied files are recorded in a _migrations ledger and skipped on later
+ * runs, so this is safe to run repeatedly — the SQL that drizzle-kit generates
+ * is not itself re-runnable (plain CREATE TABLE), so relying on the statements
+ * alone would fail the second time.
+ *
+ * Each file runs inside a transaction: a migration that fails part way leaves
+ * the database as it was rather than half-applied.
  */
 import './load-env';
 import fs from 'fs/promises';
@@ -41,12 +46,51 @@ async function main() {
   await client.connect();
 
   try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS _migrations (
+        filename   text PRIMARY KEY,
+        applied_at timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    const { rows: done } = await client.query<{ filename: string }>('SELECT filename FROM _migrations');
+    const applied = new Set(done.map((r) => r.filename));
+
+    // A database migrated before this ledger existed already has the baseline
+    // tables but no record of them. Adopt it rather than re-running the
+    // baseline, which would fail on "relation already exists".
+    if (applied.size === 0) {
+      const { rows } = await client.query<{ exists: string | null }>(
+        `SELECT to_regclass('public.users')::text AS exists`
+      );
+      if (rows[0]?.exists) {
+        const baseline = files[0];
+        await client.query('INSERT INTO _migrations (filename) VALUES ($1)', [baseline]);
+        applied.add(baseline);
+        console.log(`  พบตารางเดิมอยู่แล้ว — บันทึก ${baseline} ว่ารันไปแล้ว`);
+      }
+    }
+
+    let ran = 0;
     for (const file of files) {
+      if (applied.has(file)) {
+        console.log(`  ข้าม ${file} (รันไปแล้ว)`);
+        continue;
+      }
       const sql = await fs.readFile(path.join(dir, file), 'utf8');
       process.stdout.write(`  กำลังรัน ${file} ... `);
-      await client.query(sql);
+      try {
+        await client.query('BEGIN');
+        await client.query(sql);
+        await client.query('INSERT INTO _migrations (filename) VALUES ($1)', [file]);
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      }
       console.log('เสร็จ');
+      ran++;
     }
+    if (ran === 0) console.log('  ไม่มี migration ใหม่');
     const { rows } = await client.query(
       `SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'`
     );

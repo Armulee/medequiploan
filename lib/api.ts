@@ -3,9 +3,12 @@ import { currentUser, type SessionUser } from './session';
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status = 400) {
+  /** Seconds until the caller may retry; sent as the Retry-After header. */
+  retryAfterSeconds?: number;
+  constructor(message: string, status = 400, retryAfterSeconds?: number) {
     super(message);
     this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -15,7 +18,10 @@ export function json(data: unknown, status = 200) {
 
 export function errorResponse(err: unknown) {
   if (err instanceof ApiError) {
-    return NextResponse.json({ error: err.message }, { status: err.status });
+    const headers = err.retryAfterSeconds
+      ? { 'Retry-After': String(err.retryAfterSeconds) }
+      : undefined;
+    return NextResponse.json({ error: err.message }, { status: err.status, headers });
   }
   console.error(err);
   return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ (server error)' }, { status: 500 });

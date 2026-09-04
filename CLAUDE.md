@@ -37,6 +37,9 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   ไม่มี interactive transaction และการแยกอ่าน/เขียนเปิดช่องให้ race
 - **`db.execute()` คืน column เป็น snake_case** ไม่ใช่ camelCase ของ Drizzle — ต้อง map เอง
 - **สี/ฟอนต์**: ใช้ CSS variables ที่มีอยู่ อย่า hardcode สีใหม่กระจัดกระจาย
+- **Rate limit**: endpoint ที่เปิดสาธารณะหรือรับรหัสผ่าน ต้องผ่าน `hit()` จาก `lib/rate-limit.ts`
+  · เก็บ counter ใน Postgres ไม่ใช่ memory (serverless แต่ละ instance ไม่แชร์กัน)
+  · limiter ออกแบบให้ **fail open** — ถ้ามันพัง ต้องไม่ล็อกเจ้าหน้าที่ออกจากระบบทั้งองค์กร
 - ก่อน commit: `npx tsc --noEmit` และ `npx next build` (ยังไม่มี automated test suite)
 
 ## คำสั่งที่ใช้บ่อย
@@ -45,7 +48,7 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
 npm install
 npm run check-env         # ตรวจว่า env ครบก่อน deploy
 npm run db:generate       # สร้าง migration จาก schema
-psql "$DATABASE_URL" -f drizzle/0000_init.sql   # รัน migration
+npm run db:migrate        # รัน migration ที่ยังไม่ได้รัน (มี ledger กันรันซ้ำ)
 npm run seed              # สร้างผู้ใช้ + อุปกรณ์ตัวอย่าง (ต้องตั้ง SEED_*_PASSWORD ก่อน)
 npm run dev               # http://localhost:3000
 npm run build             # production build
@@ -64,7 +67,6 @@ npm run build             # production build
 ## สิ่งที่ยังไม่ได้ทำ (โอกาสพัฒนาต่อ)
 
 - ยังไม่มีหน้าจอจัดการผู้ใช้ (เพิ่ม/ลบ/รีเซ็ตรหัสผ่านเจ้าหน้าที่) — schema มีคอลัมน์ `active` รออยู่แล้ว
-- ยังไม่มี rate limit ที่หน้า login และฟอร์มคำขอสาธารณะ
 - ยังไม่ได้ย่อรูปก่อนอัปโหลด (รูป 2MB กิน bandwidth และ Blob quota เร็ว)
 - ยังไม่มี data retention / auto-delete policy ตาม PDPA
 - ยังไม่มี automated test suite

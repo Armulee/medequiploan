@@ -117,6 +117,20 @@ export const stockAdjustments = pgTable('stock_adjustments', {
   at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Fixed-window counters for rate limiting.
+ *
+ * Kept in Postgres rather than process memory because each serverless
+ * invocation may be a different instance with its own heap — an in-process
+ * counter would reset constantly and enforce nothing. The key encodes both the
+ * bucket and the subject, e.g. "login:user:admin" or "request:ip:1.2.3.4".
+ */
+export const rateLimits = pgTable('rate_limits', {
+  key: varchar('key', { length: 200 }).primaryKey(),
+  count: integer('count').notNull().default(0),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Borrower = typeof borrowers.$inferSelect;
 export type Equipment = typeof equipment.$inferSelect;
@@ -124,3 +138,4 @@ export type LoanRecord = typeof records.$inferSelect;
 export type BorrowRequest = typeof requests.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type StockAdjustment = typeof stockAdjustments.$inferSelect;
+export type RateLimit = typeof rateLimits.$inferSelect;

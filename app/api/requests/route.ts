@@ -6,9 +6,20 @@ import { encrypt, nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId } from '@/lib/validate';
 import { logAction } from '@/lib/audit';
 import { saveUpload } from '@/lib/storage';
+import { RULES, clientIp, hit, sweepExpired, tooManyRequests } from '@/lib/rate-limit';
 
 // PUBLIC: submit a borrow request without logging in (spec 4.3).
 export const POST = route(async (req: Request) => {
+  void sweepExpired();
+
+  // This endpoint needs no login and both creates a borrower row and accepts a
+  // photo upload, so unchecked it is a way to fill the database and burn
+  // through the blob storage quota. Checked before the body is read so a
+  // flood costs nothing.
+  const ip = clientIp(req);
+  const limit = await hit(`request:ip:${ip}`, RULES.publicRequestPerIp);
+  if (!limit.allowed) throw tooManyRequests(limit.retryAfterSeconds);
+
   const form = await req.formData();
   const str = (k: string) => String(form.get(k) ?? '').trim();
 
