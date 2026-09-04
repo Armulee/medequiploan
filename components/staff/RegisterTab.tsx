@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import Alert from '@/components/Alert';
 import { apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
+import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { BorrowerFull } from '@/app/lib/types';
 
 const EMPTY = {
@@ -19,6 +20,8 @@ export default function RegisterTab() {
   const [error, setError] = useState('');
   const [done, setDone] = useState<BorrowerFull | null>(null);
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoNote, setPhotoNote] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set =
@@ -35,8 +38,7 @@ export default function RegisterTab() {
       setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบ (13 หลัก)');
       return;
     }
-    const file = fileRef.current?.files?.[0];
-    if (!file) {
+    if (!photo) {
       setError('กรุณาแนบรูปบัตรประชาชนเพื่อยืนยันตัวตน');
       return;
     }
@@ -45,10 +47,12 @@ export default function RegisterTab() {
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
-      fd.append('id_card_photo', file);
+      fd.append('id_card_photo', photo);
       const res = await apiForm<{ borrower: BorrowerFull }>('/api/borrowers', fd);
       setDone(res.borrower);
       setForm(EMPTY);
+      setPhoto(null);
+      setPhotoNote('');
       if (fileRef.current) fileRef.current.value = '';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ลงทะเบียนไม่สำเร็จ');
@@ -110,8 +114,32 @@ export default function RegisterTab() {
 
         <div className="field">
           <label htmlFor="reg_idcard">รูปบัตรประชาชน *</label>
-          <input id="reg_idcard" type="file" accept="image/*" capture="environment" ref={fileRef} />
-          <div className="hint">บังคับแนบเพื่อยืนยันตัวตน · เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ</div>
+          <input
+            id="reg_idcard"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={fileRef}
+            onChange={async (e) => {
+              const picked = e.target.files?.[0];
+              if (!picked) {
+                setPhoto(null);
+                setPhotoNote('');
+                return;
+              }
+              setPhotoNote('กำลังย่อรูป...');
+              const resized = await resizeImage(picked);
+              setPhoto(resized);
+              setPhotoNote(
+                resized.size < picked.size
+                  ? `ย่อรูปแล้ว ${formatBytes(picked.size)} → ${formatBytes(resized.size)}`
+                  : `ขนาดไฟล์ ${formatBytes(resized.size)}`
+              );
+            }}
+          />
+          <div className="hint">
+            {photoNote || 'บังคับแนบเพื่อยืนยันตัวตน · เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ'}
+          </div>
         </div>
 
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>

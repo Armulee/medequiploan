@@ -6,6 +6,7 @@ import Alert from '@/components/Alert';
 import Icon from '@/components/Icon';
 import { api, apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
+import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { Equipment } from '@/app/lib/types';
 
 export default function RequestPage() {
@@ -23,6 +24,7 @@ export default function RequestPage() {
     illness_description: '',
   });
   const [photo, setPhoto] = useState<File | null>(null);
+  const [photoNote, setPhotoNote] = useState('');
 
   useEffect(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
@@ -170,8 +172,24 @@ export default function RequestPage() {
                   type="file"
                   accept="image/*"
                   capture="environment"
-                  onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                  onChange={async (e) => {
+                    const picked = e.target.files?.[0];
+                    if (!picked) {
+                      setPhoto(null);
+                      setPhotoNote('');
+                      return;
+                    }
+                    setPhotoNote('กำลังย่อรูป...');
+                    const resized = await resizeImage(picked);
+                    setPhoto(resized);
+                    setPhotoNote(
+                      resized.size < picked.size
+                        ? `ย่อรูปแล้ว ${formatBytes(picked.size)} → ${formatBytes(resized.size)}`
+                        : `ขนาดไฟล์ ${formatBytes(resized.size)}`
+                    );
+                  }}
                 />
+                {photoNote && <div className="hint">{photoNote}</div>}
               </div>
 
               <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
