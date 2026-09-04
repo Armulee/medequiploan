@@ -334,20 +334,81 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .hero {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 560px;
   background:
     radial-gradient(700px circle at 85% -10%, rgba(255,138,71,0.22), transparent 55%),
     radial-gradient(500px circle at 5% 90%, rgba(255,108,29,0.14), transparent 55%),
     var(--orange-bg);
 }
-.hero-inner {
-  max-width: 1080px; margin: 0 auto;
-  padding: 48px 24px 64px;
-  display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 40px; align-items: center;
+
+/* Two crops, not two sizes of one crop: the landscape frame puts the
+   equipment to the right of the headline, the portrait frame puts it below.
+   That is what <picture media> is for — srcset alone only picks a resolution. */
+.hero-photo { position: absolute; inset: 0; display: block; }
+.hero-photo img {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;
+  /* Biased down: the equipment sits below the middle of the landscape frame. */
+  object-position: center 58%;
 }
-@media (max-width: 860px) {
-  .hero-inner { grid-template-columns: 1fr; padding: 28px 20px 44px; text-align: center; }
+/* A wash of the page's own background, not a grey veil — it disappears into
+   the warm cream of the photograph while guaranteeing the text's contrast
+   wherever the crop lands. */
+.hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 246, 240, 0.97) 0%,
+    rgba(255, 246, 240, 0.96) 52%,
+    rgba(255, 246, 240, 0.18) 68%,
+    rgba(255, 246, 240, 0) 78%
+  );
+}
+.hero-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1080px; margin: 0 auto;
+  padding: 56px 24px 64px;
+}
+.hero-copy { max-width: 48%; }
+
+/* Below this the photograph comes out from behind the text entirely. Sharing
+   the width stops working well before the layout breaks: a text column narrow
+   enough to stay inside the wash leaves Thai copy wrapping to six lines, and
+   one wide enough to read runs onto the crutches. Stacking costs nothing and
+   gives the equipment the full width. */
+@media (max-width: 1023px) {
+  .hero { min-height: 0; }
+  .hero-photo { position: static; order: 2; }
+  .hero-photo img { height: auto; aspect-ratio: 16 / 9; object-position: center 60%; }
+  .hero-scrim { display: none; }
+  .hero-inner { order: 1; padding: 32px 20px 36px; }
+  .hero-copy { max-width: none; }
+}
+
+/* On a phone the portrait crop reads better than a letterboxed landscape one:
+   the equipment fills the frame instead of sitting in a distant strip. */
+@media (max-width: 640px) {
+  /* Square, not 3:4. The source is 55% empty wall above the equipment, so a
+     taller frame just buys more wall — a square anchored to the bottom starts
+     the crop below most of it. */
+  .hero-photo img { aspect-ratio: 1 / 1; object-position: center bottom; }
+  .hero-inner { padding: 28px 20px 32px; text-align: center; }
   .hero-cta { justify-content: center; }
   .hero-badges { justify-content: center; }
+}
+
+/* The stock list the photograph displaced. Same panel, now a band of its own
+   directly below the hero, so the header's #stock link still lands on it. */
+.stock-band { max-width: 1080px; margin: 0 auto; padding: 32px 24px 0; }
+.stock-band .hero-panel { padding: 22px 26px; }
+.stock-band .stock-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0 28px;
 }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
@@ -363,7 +424,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .hero p.lead {
   font-size: 1.08rem; color: var(--text-muted); max-width: 46ch; margin: 0 0 26px;
 }
-@media (max-width: 860px) { .hero p.lead { margin-inline: auto; } }
+@media (max-width: 640px) { .hero p.lead { margin-inline: auto; } }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
 .hero-badges { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted); }
 .hero-badges span { display: flex; align-items: center; gap: 6px; }

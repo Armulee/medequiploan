@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
+import HeroPhoto from '@/components/landing/HeroPhoto';
 import StockPreview from '@/components/landing/StockPreview';
 import { EQUIPMENT_KINDS, SITE_DESCRIPTION, SITE_NAME, absolute, siteUrl } from '@/lib/site';
 import { landingPageJsonLd } from '@/lib/structured-data';
@@ -106,8 +107,10 @@ export default function LandingPage() {
       </header>
 
       <section className="hero">
+        <HeroPhoto />
+        <div className="hero-scrim" />
         <div className="hero-inner">
-          <div>
+          <div className="hero-copy">
             <span className="hero-eyebrow">
               <Icon name="check" size={14} strokeWidth={2.5} />
               ยืมฟรี ไม่มีค่าใช้จ่าย
@@ -139,12 +142,18 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="hero-panel" id="stock">
-            <h3>
-              <Icon name="box" size={20} stroke="var(--orange-dark)" />
-              อุปกรณ์ที่พร้อมให้ยืมตอนนี้
-            </h3>
+      {/* Displaced from the hero by the photograph, but still what #stock in
+          the header points at. */}
+      <section className="stock-band" id="stock">
+        <div className="hero-panel">
+          <h3>
+            <Icon name="box" size={20} stroke="var(--orange-dark)" />
+            อุปกรณ์ที่พร้อมให้ยืมตอนนี้
+          </h3>
+          <div className="stock-list">
             <StockPreview />
           </div>
         </div>
