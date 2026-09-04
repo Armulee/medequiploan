@@ -1,6 +1,55 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
 import StockPreview from '@/components/landing/StockPreview';
+import { EQUIPMENT_KINDS, SITE_DESCRIPTION, SITE_NAME, absolute, siteUrl } from '@/lib/site';
+import { landingPageJsonLd } from '@/lib/structured-data';
+
+// The landing page is the only page meant to be found from outside, so the
+// social and search description lives here rather than in the layout: the
+// request form and the tracking page inherit the layout's plain defaults and
+// have nothing to gain from a share card.
+export const metadata: Metadata = {
+  // `absolute` rather than the layout's "%s · site name" template, because
+  // this title already is the site name.
+  title: { absolute: `${SITE_NAME} — ยืมฟรี ไม่มีค่าใช้จ่าย` },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    ...EQUIPMENT_KINDS,
+    'ยืมกายอุปกรณ์',
+    'ยืมกายอุปกรณ์การแพทย์',
+    'ยืมกายอุปกรณ์ฟรี',
+    'ยืมวีลแชร์ฟรี',
+    'ศูนย์ยืมอุปกรณ์การแพทย์',
+    'อุปกรณ์ผู้ป่วยติดเตียง',
+    'อุปกรณ์ผู้สูงอายุ',
+    'บริจาคกายอุปกรณ์',
+  ],
+  alternates: { canonical: siteUrl },
+  openGraph: {
+    type: 'website',
+    locale: 'th_TH',
+    url: siteUrl,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — ยืมฟรี ไม่มีค่าใช้จ่าย`,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: absolute('/assets/og-image.png'),
+        width: 1200,
+        height: 630,
+        type: 'image/png',
+        alt: 'ยืมกายอุปกรณ์การแพทย์ฟรี ที่บ้านคุณ — วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME} — ยืมฟรี ไม่มีค่าใช้จ่าย`,
+    description: SITE_DESCRIPTION,
+    images: [absolute('/assets/og-image.png')],
+  },
+};
 
 const STEPS = [
   { title: 'กรอกแบบฟอร์ม', body: 'บอกข้อมูลผู้ยืมและอุปกรณ์ที่ต้องการ ใช้เวลาไม่ถึง 3 นาที' },
@@ -31,6 +80,16 @@ const BADGES = ['ไม่มีค่าใช้จ่าย', 'ใช้ง�
 export default function LandingPage() {
   return (
     <>
+      {/* What an answer engine reads instead of guessing from the prose. */}
+      <script
+        type="application/ld+json"
+        // Every value is a literal from lib/site.ts, but escaping `<` keeps a
+        // future edit from being able to close this tag early.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(landingPageJsonLd()).replace(/</g, '\\u003c'),
+        }}
+      />
+
       <header className="site-header">
         <div className="brand">
           <span className="logo-mark">

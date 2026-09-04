@@ -19,3 +19,4 @@ uploads/illness_photos/*
 data/*.json
 data/.encryption_key
 tsconfig.tsbuildinfo
+.cache/
