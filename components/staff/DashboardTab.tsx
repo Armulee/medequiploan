@@ -27,7 +27,12 @@ type Dashboard = {
   monthly: Array<{ month: string; borrows: number }>;
 };
 
-export default function DashboardTab() {
+export type DashboardJump =
+  | { tab: 'borrow'; filter: 'active' | 'overdue' }
+  | { tab: 'requests'; filter: 'รอดำเนินการ' }
+  | { tab: 'stock'; filter: 'low' };
+
+export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) => void }) {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState('');
 
@@ -47,11 +52,36 @@ export default function DashboardTab() {
       <div className="card">
         <h1>ภาพรวมระบบ</h1>
 
+        {/* Each tile opens the list it counts, already filtered — the number
+            on its own only ever prompts the question "which ones?" */}
         <div className="stat-row">
-          <StatTile label="กำลังยืมอยู่" value={s.active_loans} unit="รายการ" />
-          <StatTile label="เกินกำหนดคืน" value={s.overdue_loans} unit="รายการ" tone={s.overdue_loans > 0 ? 'danger' : undefined} />
-          <StatTile label="คำขอรออนุมัติ" value={s.pending_requests} unit="คำขอ" tone={s.pending_requests > 0 ? 'warn' : undefined} />
-          <StatTile label="อุปกรณ์ใกล้หมด" value={s.low_stock_items} unit="รายการ" tone={s.low_stock_items > 0 ? 'warn' : undefined} />
+          <StatTile
+            label="กำลังยืมอยู่"
+            value={s.active_loans}
+            unit="รายการ"
+            onClick={() => onJump({ tab: 'borrow', filter: 'active' })}
+          />
+          <StatTile
+            label="เกินกำหนดคืน"
+            value={s.overdue_loans}
+            unit="รายการ"
+            tone={s.overdue_loans > 0 ? 'danger' : undefined}
+            onClick={() => onJump({ tab: 'borrow', filter: 'overdue' })}
+          />
+          <StatTile
+            label="คำขอรออนุมัติ"
+            value={s.pending_requests}
+            unit="คำขอ"
+            tone={s.pending_requests > 0 ? 'warn' : undefined}
+            onClick={() => onJump({ tab: 'requests', filter: 'รอดำเนินการ' })}
+          />
+          <StatTile
+            label="อุปกรณ์ใกล้หมด"
+            value={s.low_stock_items}
+            unit="รายการ"
+            tone={s.low_stock_items > 0 ? 'warn' : undefined}
+            onClick={() => onJump({ tab: 'stock', filter: 'low' })}
+          />
         </div>
 
         <div className="stat-row" style={{ marginTop: 10 }}>
@@ -118,19 +148,32 @@ function StatTile({
   value,
   unit,
   tone,
+  onClick,
 }: {
   label: string;
   value: number;
   unit: string;
   tone?: 'warn' | 'danger';
+  onClick?: () => void;
 }) {
-  return (
-    <div className={`stat-tile${tone ? ` stat-${tone}` : ''}`}>
-      <div className="stat-label">{label}</div>
+  const className = `stat-tile${tone ? ` stat-${tone}` : ''}`;
+  const body = (
+    <>
+      <div className="stat-label">
+        {label}
+        {onClick && <Icon name="chevron-right" size={15} className="stat-arrow" />}
+      </div>
       <div className="stat-value">
         {value.toLocaleString('th-TH')}
         <span className="stat-unit">{unit}</span>
       </div>
-    </div>
+    </>
+  );
+
+  if (!onClick) return <div className={className}>{body}</div>;
+  return (
+    <button type="button" className={className} onClick={onClick}>
+      {body}
+    </button>
   );
 }

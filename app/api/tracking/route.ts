@@ -51,10 +51,13 @@ export const POST = route(async (req: Request) => {
         requestedAt: requests.requestedAt,
         status: requests.status,
         note: requests.note,
+        recordId: requests.recordId,
+        dueDate: records.dueDate,
         equipmentName: equipment.name,
       })
       .from(requests)
       .leftJoin(equipment, eq(requests.equipmentId, equipment.equipmentId))
+      .leftJoin(records, eq(requests.recordId, records.recordId))
       .where(eq(requests.borrowerId, borrower.borrowerId))
       .orderBy(desc(requests.requestedAt))
       .limit(20),
@@ -81,6 +84,8 @@ export const POST = route(async (req: Request) => {
       status: r.status,
       // Only shown for a rejection, where it is the reason the person needs.
       note: r.status === 'ปฏิเสธ' ? r.note : '',
+      // And the return date once approved, which is what they need next.
+      due_date: r.status === 'อนุมัติ' ? r.dueDate : null,
       equipment_name: r.equipmentName ?? '-',
     })),
     loans: loanRows.map((r) => ({

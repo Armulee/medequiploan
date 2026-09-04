@@ -4,16 +4,23 @@ import Icon from '@/components/Icon';
 import { useSession } from '@/app/staff/SessionContext';
 import type { SessionUser } from '@/app/lib/types';
 
-export type TabId = 'dashboard' | 'register' | 'borrow' | 'requests' | 'stock' | 'history';
+export type TabId = 'dashboard' | 'register' | 'borrow' | 'requests' | 'stock' | 'history' | 'users';
 
-export const TABS: Array<{ id: TabId; label: string; icon: string }> = [
+// adminOnly tabs are filtered out for staff rather than shown and refused —
+// the API enforces the same restriction regardless of what is rendered.
+export const TABS: Array<{ id: TabId; label: string; icon: string; adminOnly?: boolean }> = [
   { id: 'dashboard', label: 'ภาพรวม', icon: 'dashboard' },
   { id: 'register', label: 'ลงทะเบียน', icon: 'register' },
   { id: 'borrow', label: 'ยืม-คืน', icon: 'borrow' },
   { id: 'requests', label: 'คำขอ', icon: 'requests' },
   { id: 'stock', label: 'สต็อก', icon: 'stock' },
   { id: 'history', label: 'ประวัติ', icon: 'history' },
+  { id: 'users', label: 'เจ้าหน้าที่', icon: 'users', adminOnly: true },
 ];
+
+export function tabsFor(role: string) {
+  return TABS.filter((t) => !t.adminOnly || role === 'admin');
+}
 
 export default function AppShell({
   user,
@@ -27,6 +34,7 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const { logout } = useSession();
+  const tabs = tabsFor(user.role);
 
   return (
     <>
@@ -36,7 +44,7 @@ export default function AppShell({
           ยืม-คืนกายอุปกรณ์
         </div>
         <nav className="app-nav-desktop">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.id}
               className={t.id === tab ? 'active' : ''}
@@ -60,7 +68,7 @@ export default function AppShell({
       <div className="container">{children}</div>
 
       <nav className="tabbar">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             className={t.id === tab ? 'active' : ''}

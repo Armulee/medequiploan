@@ -24,7 +24,7 @@ const ACTION_LABELS: Record<string, string> = {
   adjust_stock: 'ตัดสต็อก',
 };
 
-export default function HistoryTab() {
+export default function HistoryTab({ isAdmin }: { isAdmin: boolean }) {
   const [sub, setSub] = useState<SubTab>('borrower');
 
   return (
@@ -43,17 +43,20 @@ export default function HistoryTab() {
         >
           ประวัติอุปกรณ์
         </button>
-        <button
-          className={`btn btn-sm ${sub === 'audit' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setSub('audit')}
-        >
-          Audit Log
-        </button>
+        {/* Names who did what to whose record — oversight, not everyday use. */}
+        {isAdmin && (
+          <button
+            className={`btn btn-sm ${sub === 'audit' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setSub('audit')}
+          >
+            Audit Log
+          </button>
+        )}
       </div>
 
       {sub === 'borrower' && <BorrowerHistory />}
       {sub === 'equipment' && <EquipmentHistory />}
-      {sub === 'audit' && <AuditLog />}
+      {sub === 'audit' && isAdmin && <AuditLog />}
     </div>
   );
 }

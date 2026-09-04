@@ -17,6 +17,8 @@ const REASONS = {
   // Temporarily out: off the shelf but still owned, so the total is unchanged.
   ส่งซ่อม: { total: false },
   รับกลับจากซ่อม: { total: false, restore: true },
+  // New units: raises both the total owned and what is on the shelf.
+  รับเข้าเพิ่ม: { total: true, add: true },
 } as const;
 
 type Reason = keyof typeof REASONS;
@@ -37,10 +39,19 @@ export const POST = route<Ctx>(async (req, { params }) => {
   const note = String(body.note ?? '').trim();
   const rule = REASONS[reason];
   const restore = 'restore' in rule && rule.restore;
+  const isAdd = 'add' in rule && rule.add;
 
   // One guarded statement so the count can't be driven negative (or above the
   // total when restoring) by two admins adjusting at the same moment.
-  const result = restore
+  const result = isAdd
+    ? await db.execute(sql`
+        UPDATE ${equipment}
+           SET available_qty = available_qty + ${qty},
+               total_qty = total_qty + ${qty}
+         WHERE equipment_id = ${id}
+        RETURNING *
+      `)
+    : restore
     ? await db.execute(sql`
         UPDATE ${equipment}
            SET available_qty = available_qty + ${qty}
@@ -97,7 +108,7 @@ export const POST = route<Ctx>(async (req, { params }) => {
 
   await logAction({
     actor: user,
-    action: 'adjust_stock',
+    action: isAdd ? 'add_stock' : 'adjust_stock',
     targetType: 'equipment',
     targetId: id,
     details: `${reason} ${qty} ชิ้น${note ? ` (${note})` : ''}`,

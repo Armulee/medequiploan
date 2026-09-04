@@ -1,10 +1,12 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { auditLog } from '@/lib/db/schema';
-import { json, requireAuth, route } from '@/lib/api';
+import { json, requireRole, route } from '@/lib/api';
 
 export const GET = route(async (req: Request) => {
-  await requireAuth();
+  // The log names who did what to whose record; that is an oversight tool,
+  // not something every staff member needs to read.
+  await requireRole('admin');
   const sp = new URL(req.url).searchParams;
 
   const filters: SQL[] = [];

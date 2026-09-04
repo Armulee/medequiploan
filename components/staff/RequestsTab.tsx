@@ -2,19 +2,28 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
+import Dialog, { DialogActions } from '@/components/Dialog';
 import Icon from '@/components/Icon';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDateTime } from '@/app/lib/format';
+import BorrowerDetail from './BorrowerDetail';
 import type { BorrowRequest } from '@/app/lib/types';
 
 const FILTERS = ['รอดำเนินการ', 'อนุมัติ', 'ปฏิเสธ', 'ทั้งหมด'] as const;
 
-export default function RequestsTab() {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('รอดำเนินการ');
+type Decision = { request: BorrowRequest; kind: 'approve' | 'reject' };
+
+export default function RequestsTab({
+  initialFilter,
+}: {
+  initialFilter?: (typeof FILTERS)[number];
+}) {
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>(initialFilter ?? 'รอดำเนินการ');
   const [items, setItems] = useState<BorrowRequest[] | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [decision, setDecision] = useState<Decision | null>(null);
+  const [viewing, setViewing] = useState<BorrowRequest | null>(null);
 
   const load = useCallback(() => {
     const qs = filter === 'ทั้งหมด' ? '' : `?status=${encodeURIComponent(filter)}`;
@@ -29,43 +38,54 @@ export default function RequestsTab() {
 
   useEffect(load, [load]);
 
-  async function approve(r: BorrowRequest) {
-    const due = window.prompt(
-      `อนุมัติคำขอ ${r.request_id}\nกำหนดคืน (YYYY-MM-DD, เว้นว่างได้)`,
-      ''
-    );
-    if (due === null) return;
-
-    setError('');
-    setSuccess('');
-    setBusyId(r.request_id);
-    try {
-      await apiJson(`/api/requests/${r.request_id}/approve`, 'PUT', { due_date: due || null });
-      setSuccess(`อนุมัติคำขอ ${r.request_id} แล้ว และสร้างรายการยืมเรียบร้อย`);
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'อนุมัติไม่สำเร็จ');
-    } finally {
-      setBusyId(null);
-    }
+  function decided(message: string) {
+    setSuccess(message);
+    setDecision(null);
+    setViewing(null);
+    load();
   }
 
-  async function reject(r: BorrowRequest) {
-    const reason = window.prompt(`ปฏิเสธคำขอ ${r.request_id}\nเหตุผล`, '');
-    if (reason === null) return;
-
-    setError('');
-    setSuccess('');
-    setBusyId(r.request_id);
-    try {
-      await apiJson(`/api/requests/${r.request_id}/reject`, 'PUT', { reason });
-      setSuccess(`ปฏิเสธคำขอ ${r.request_id} แล้ว`);
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'ปฏิเสธไม่สำเร็จ');
-    } finally {
-      setBusyId(null);
-    }
+  // Viewing one borrower takes over the tab, so the queue keeps its filter and
+  // scroll position when you come back.
+  if (viewing) {
+    return (
+      <>
+        <BorrowerDetail
+          borrowerId={viewing.borrower_id}
+          onBack={() => setViewing(null)}
+          actions={
+            viewing.status === 'รอดำเนินการ' ? (
+              <>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setDecision({ request: viewing, kind: 'approve' })}
+                >
+                  อนุมัติคำขอ {viewing.request_id}
+                </button>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => setDecision({ request: viewing, kind: 'reject' })}
+                >
+                  ปฏิเสธคำขอ
+                </button>
+              </>
+            ) : (
+              <span className={statusBadgeClass(viewing.status)}>
+                คำขอ {viewing.request_id}: {viewing.status}
+              </span>
+            )
+          }
+        />
+        {decision && (
+          <DecisionDialog
+            decision={decision}
+            onClose={() => setDecision(null)}
+            onDone={decided}
+            onError={setError}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -97,7 +117,10 @@ export default function RequestsTab() {
             <div className="list-row" key={r.request_id}>
               <div>
                 <div className="title">
-                  {r.borrower_name} · {r.equipment_name}
+                  <button className="row-link" onClick={() => setViewing(r)}>
+                    {r.borrower_name}
+                  </button>
+                  <span style={{ fontWeight: 400 }}>· {r.equipment_name}</span>
                 </div>
                 <div className="sub">
                   {r.request_id} · ส่งเมื่อ {thDateTime(r.requested_at)}
@@ -106,11 +129,7 @@ export default function RequestsTab() {
                 {(r.borrower_phone || r.borrower_line_id) && (
                   <div className="sub contact-line">
                     <Icon name="phone" size={14} />
-                    {r.borrower_phone ? (
-                      <a href={`tel:${r.borrower_phone}`}>{r.borrower_phone}</a>
-                    ) : (
-                      '-'
-                    )}
+                    {r.borrower_phone ? <a href={`tel:${r.borrower_phone}`}>{r.borrower_phone}</a> : '-'}
                     {r.borrower_line_id ? ` · LINE: ${r.borrower_line_id}` : ''}
                   </div>
                 )}
@@ -121,15 +140,13 @@ export default function RequestsTab() {
                   <>
                     <button
                       className="btn btn-sm btn-primary"
-                      disabled={busyId === r.request_id}
-                      onClick={() => approve(r)}
+                      onClick={() => setDecision({ request: r, kind: 'approve' })}
                     >
                       อนุมัติ
                     </button>
                     <button
                       className="btn btn-sm btn-outline"
-                      disabled={busyId === r.request_id}
-                      onClick={() => reject(r)}
+                      onClick={() => setDecision({ request: r, kind: 'reject' })}
                     >
                       ปฏิเสธ
                     </button>
@@ -140,6 +157,115 @@ export default function RequestsTab() {
           ))}
         </div>
       )}
+
+      {decision && (
+        <DecisionDialog
+          decision={decision}
+          onClose={() => setDecision(null)}
+          onDone={decided}
+          onError={setError}
+        />
+      )}
     </div>
   );
+}
+
+/**
+ * Approving and rejecting used window.prompt(), which can't offer a date
+ * picker, can't validate before it closes, and can't be styled. Both are now
+ * proper dialogs — and the due date is what the borrower sees on the tracking
+ * page, so it is worth collecting properly.
+ */
+function DecisionDialog({
+  decision,
+  onClose,
+  onDone,
+  onError,
+}: {
+  decision: Decision;
+  onClose: () => void;
+  onDone: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const { request, kind } = decision;
+  const [dueDate, setDueDate] = useState(defaultDueDate());
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (kind === 'reject' && !reason.trim()) {
+      return setError('กรุณากรอกเหตุผล ผู้ยืมจะเห็นข้อความนี้ในหน้าติดตามคำขอ');
+    }
+    setBusy(true);
+    try {
+      if (kind === 'approve') {
+        await apiJson(`/api/requests/${request.request_id}/approve`, 'PUT', {
+          due_date: dueDate || null,
+        });
+        onDone(`อนุมัติคำขอ ${request.request_id} แล้ว และสร้างรายการยืมเรียบร้อย`);
+      } else {
+        await apiJson(`/api/requests/${request.request_id}/reject`, 'PUT', { reason: reason.trim() });
+        onDone(`ปฏิเสธคำขอ ${request.request_id} แล้ว`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ';
+      setError(message);
+      onError(message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      title={kind === 'approve' ? 'อนุมัติคำขอยืม' : 'ปฏิเสธคำขอยืม'}
+      subtitle={`${request.borrower_name} · ${request.equipment_name} (${request.request_id})`}
+      onClose={onClose}
+    >
+      <Alert kind="error">{error}</Alert>
+      <form onSubmit={submit}>
+        {kind === 'approve' ? (
+          <div className="field">
+            <label htmlFor="dec_due">กำหนดคืน</label>
+            <input
+              id="dec_due"
+              type="date"
+              value={dueDate}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setDueDate(e.target.value)}
+              autoFocus
+            />
+            <div className="hint">ผู้ยืมจะเห็นวันนี้ในหน้าติดตามคำขอ · เว้นว่างได้ถ้ายังไม่กำหนด</div>
+          </div>
+        ) : (
+          <div className="field">
+            <label htmlFor="dec_reason">เหตุผลที่ปฏิเสธ *</label>
+            <textarea
+              id="dec_reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="เช่น เอกสารไม่ครบ กรุณาส่งคำขอใหม่พร้อมรูปบัตรประชาชน"
+              autoFocus
+            />
+            <div className="hint">ผู้ยืมจะเห็นข้อความนี้ในหน้าติดตามคำขอ</div>
+          </div>
+        )}
+        <DialogActions
+          confirmLabel={kind === 'approve' ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธ'}
+          onCancel={onClose}
+          busy={busy}
+          danger={kind === 'reject'}
+        />
+      </form>
+    </Dialog>
+  );
+}
+
+/** Two weeks out — the common case, still editable. */
+function defaultDueDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().slice(0, 10);
 }

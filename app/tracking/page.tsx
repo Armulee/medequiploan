@@ -13,6 +13,7 @@ type TrackedRequest = {
   requested_at: string;
   status: string;
   note: string;
+  due_date: string | null;
   equipment_name: string;
 };
 
@@ -144,7 +145,12 @@ export default function TrackingPage() {
                       {r.request_id} · ส่งเมื่อ {thDateTime(r.requested_at)}
                     </div>
                     <div className="sub">{STATUS_HELP[r.status] ?? ''}</div>
-                    {r.note && <div className="sub">เหตุผล: {r.note}</div>}
+                    {r.due_date && (
+                      <div className="sub track-highlight">
+                        กำหนดคืนวันที่ <strong>{thDate(r.due_date)}</strong>
+                      </div>
+                    )}
+                    {r.note && <div className="sub track-highlight">เหตุผล: {r.note}</div>}
                   </div>
                   <span className={statusBadgeClass(r.status)}>{r.status}</span>
                 </div>

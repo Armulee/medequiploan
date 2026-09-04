@@ -7,12 +7,17 @@ import { statusBadgeClass, thDate } from '@/app/lib/format';
 import BorrowerSearch from './BorrowerSearch';
 import type { BorrowerListItem, Equipment, LoanRecord } from '@/app/lib/types';
 
-export default function BorrowTab() {
+export default function BorrowTab({
+  initialFilter,
+}: {
+  initialFilter?: 'active' | 'overdue';
+}) {
   const [picked, setPicked] = useState<BorrowerListItem | null>(null);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [equipmentId, setEquipmentId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [active, setActive] = useState<LoanRecord[] | null>(null);
+  const [onlyOverdue, setOnlyOverdue] = useState(initialFilter === 'overdue');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
@@ -84,6 +89,8 @@ export default function BorrowTab() {
     }
   }
 
+  const shown = (active ?? []).filter((r) => !onlyOverdue || r.status === 'เกินกำหนด');
+
   return (
     <>
       <div className="card">
@@ -141,14 +148,32 @@ export default function BorrowTab() {
       </div>
 
       <div className="card">
-        <h2>รายการที่ยืมอยู่</h2>
+        <div className="card-head">
+          <h2>รายการที่ยืมอยู่</h2>
+          <div className="filter-row" style={{ margin: 0 }}>
+            <button
+              className={`btn btn-sm ${onlyOverdue ? 'btn-outline' : 'btn-primary'}`}
+              onClick={() => setOnlyOverdue(false)}
+            >
+              ทั้งหมด
+            </button>
+            <button
+              className={`btn btn-sm ${onlyOverdue ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setOnlyOverdue(true)}
+            >
+              เกินกำหนด
+            </button>
+          </div>
+        </div>
         {active === null ? (
           <div className="empty-state">กำลังโหลด...</div>
-        ) : active.length === 0 ? (
-          <div className="empty-state">ไม่มีรายการยืมอยู่ในขณะนี้</div>
+        ) : shown.length === 0 ? (
+          <div className="empty-state">
+            {onlyOverdue ? 'ไม่มีรายการเกินกำหนด' : 'ไม่มีรายการยืมอยู่ในขณะนี้'}
+          </div>
         ) : (
           <div className="list">
-            {active.map((r) => (
+            {shown.map((r) => (
               <div className="list-row" key={r.record_id}>
                 <div>
                   <div className="title">{r.equipment_name}</div>
