@@ -2,6 +2,8 @@
 
 ไฟล์ทำงานของแคนวาสออกแบบใหม่ (ยังไม่ได้เอาลงโค้ดจริง — รอเคาะทิศทางก่อน)
 
+- `HeroDesktop / HeroTablet / HeroMobile.dc.html` — hero พร้อมรูปจริง 3 ช่วงจอ (ทาง 1: ใช้ใบนอนตามเดิม + scrim ครีมกลบซ้าย) · อาร์ตบอร์ดจอคอมมี tweak `Scrim` ลากปรับระยะได้
+- `hero-wide.jpg` / `hero-tall.jpg` — รูปที่บีบมาสำหรับแคนวาสโดยเฉพาะ (900px / 62KB เพราะแคนวาสฝังรูปเป็น base64 มีเพดาน) **ไม่ใช่ไฟล์สำหรับเอาไปใช้จริง** ของจริงต้อง gen ที่ ≥2400px แล้วทำเป็น AVIF หลายขนาด
 - `DirectionA/B/C.dc.html` — 3 ทิศทางให้เลือก
 - `Main / Request / Tracking / StaffDashboard / StaffQueue / StaffStock / StaffLogin` — ทิศทาง A ทำเต็มทุกหน้า (จอใหญ่)
 - `HomeMobile / RequestMobile / StaffMobile` — จอ 390px
