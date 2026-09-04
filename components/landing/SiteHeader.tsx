@@ -50,7 +50,6 @@ export default function SiteHeader() {
         </Link>
         <nav>
           <Link href="/request">ส่งคำขอยืมอุปกรณ์</Link>
-          <a href="#how">วิธีใช้งาน</a>
           <Link href="/tracking">ติดตามคำขอ</Link>
           <Link href="/staff">สำหรับเจ้าหน้าที่</Link>
         </nav>
