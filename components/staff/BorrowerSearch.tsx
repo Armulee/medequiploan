@@ -7,7 +7,7 @@ import type { BorrowerListItem } from '@/app/lib/types';
 
 export default function BorrowerSearch({
   onPick,
-  placeholder = 'ค้นหาด้วยชื่อ หรือเลขบัตรประชาชน',
+  placeholder = 'ค้นหาด้วยชื่อ เบอร์โทร หรือเลขบัตรประชาชน',
 }: {
   onPick: (b: BorrowerListItem) => void;
   placeholder?: string;
@@ -73,6 +73,7 @@ export default function BorrowerSearch({
                   </div>
                   <div className="sub">
                     {b.borrower_id} · {b.national_id_masked}
+                    {b.phone ? ` · ${b.phone}` : ''}
                     {!b.verified && ' · ยังไม่ยืนยันตัวตน'}
                   </div>
                 </div>

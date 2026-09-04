@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
+import ConsentNotice from '@/components/ConsentNotice';
 import Icon from '@/components/Icon';
 import { api, apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
+import { normalisePhone } from '@/lib/validate';
 import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { Equipment } from '@/app/lib/types';
 
@@ -20,9 +22,12 @@ export default function RequestPage() {
     last_name: '',
     national_id: '',
     address: '',
+    phone: '',
+    line_id: '',
     equipment_id: '',
     illness_description: '',
   });
+  const [consent, setConsent] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoNote, setPhotoNote] = useState('');
 
@@ -45,11 +50,20 @@ export default function RequestPage() {
       setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (13 หลัก)');
       return;
     }
+    if (!normalisePhone(form.phone)) {
+      setError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
+      return;
+    }
+    if (!consent) {
+      setError('กรุณาอ่านและยอมรับประกาศความเป็นส่วนตัว (PDPA) ก่อนส่งคำขอ');
+      return;
+    }
 
     setSubmitting(true);
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
+      fd.append('consent', 'true');
       if (photo) fd.append('illness_photo', photo);
 
       const res = await apiForm<{ request: { request_id: string } }>('/api/requests', fd);
@@ -147,6 +161,32 @@ export default function RequestPage() {
                 <textarea id="address" value={form.address} onChange={set('address')} required />
               </div>
 
+              <div className="row">
+                <div className="field">
+                  <label htmlFor="phone">เบอร์โทรศัพท์ *</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="เช่น 0812345678"
+                    value={form.phone}
+                    onChange={set('phone')}
+                    required
+                  />
+                  <div className="hint">เจ้าหน้าที่จะโทรกลับเบอร์นี้เพื่อนัดรับอุปกรณ์</div>
+                </div>
+                <div className="field">
+                  <label htmlFor="line_id">LINE ID</label>
+                  <input
+                    id="line_id"
+                    type="text"
+                    placeholder="ถ้ามี (ไม่บังคับ)"
+                    value={form.line_id}
+                    onChange={set('line_id')}
+                  />
+                </div>
+              </div>
+
               <div className="field">
                 <label htmlFor="equipment_id">อุปกรณ์ที่ต้องการยืม *</label>
                 <select id="equipment_id" value={form.equipment_id} onChange={set('equipment_id')} required>
@@ -196,6 +236,8 @@ export default function RequestPage() {
                 />
                 {photoNote && <div className="hint">{photoNote}</div>}
               </div>
+
+              <ConsentNotice checked={consent} onChange={setConsent} />
 
               <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
                 {submitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอยืม'}

@@ -536,3 +536,67 @@ button.list-row {
   background: var(--orange-light);
   border-color: var(--orange-mid);
 }
+
+/* ---------- PDPA consent ---------- */
+.consent-box {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--orange-bg);
+}
+.consent-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.consent-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+}
+.consent-caret { display: inline-flex; transition: transform 0.15s var(--ease); transform: rotate(-90deg); }
+.consent-caret[data-open='true'] { transform: rotate(90deg); }
+.consent-intro { margin: 8px 0 0; font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+.consent-more {
+  margin-top: 6px; padding: 0; background: none; border: none; box-shadow: none;
+  color: var(--orange-dark); font: inherit; font-size: 0.88rem; font-weight: 600;
+  text-decoration: underline; cursor: pointer;
+}
+.consent-body {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  max-height: 260px; overflow-y: auto;
+}
+.consent-section { margin-bottom: 12px; }
+.consent-section h4 {
+  margin: 0 0 3px; font-size: 0.9rem; font-weight: 700;
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+}
+.consent-section p { margin: 0; font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
+.consent-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem; line-height: 1.55; cursor: pointer;
+}
+/* A tick box people can actually hit, including on a phone. */
+.consent-check input[type='checkbox'] {
+  width: 22px; height: 22px; margin: 1px 0 0; flex-shrink: 0;
+  accent-color: var(--orange); cursor: pointer;
+}
+
+/* Phone number in the queue — tappable on a phone, so staff can just call. */
+.contact-line { display: inline-flex; align-items: center; gap: 5px; margin-top: 3px; }
+.contact-line a { font-weight: 600; }

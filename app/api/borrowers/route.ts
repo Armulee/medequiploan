@@ -3,7 +3,8 @@ import { db } from '@/lib/db';
 import { borrowers } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
-import { isValidThaiNationalId } from '@/lib/validate';
+import { isValidThaiNationalId, normalisePhone } from '@/lib/validate';
+import { CONSENT_VERSION } from '@/lib/consent';
 import { logAction } from '@/lib/audit';
 import { saveUpload } from '@/lib/storage';
 import { borrowerFullView, borrowerListView } from '@/lib/views';
@@ -21,7 +22,8 @@ export const GET = route(async (req: Request) => {
         .where(
           or(
             ilike(sql`${borrowers.firstName} || ' ' || ${borrowers.lastName}`, `%${q}%`),
-            eq(borrowers.nationalIdHash, /^\d{13}$/.test(q) ? nationalIdHash(q) : '')
+            eq(borrowers.nationalIdHash, /^\d{13}$/.test(q) ? nationalIdHash(q) : ''),
+            ilike(borrowers.phone, `%${q.replace(/[\s\-().]/g, '')}%`)
           )
         )
         .orderBy(desc(borrowers.registeredAt))
@@ -47,6 +49,17 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('เลขบัตรประชาชนไม่ถูกต้อง (ต้องเป็นตัวเลข 13 หลักและผ่านการตรวจสอบ checksum)');
   }
 
+  const phone = normalisePhone(str('phone'));
+  if (!phone) {
+    throw new ApiError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
+  }
+
+  // The staff member confirms the person in front of them was read the notice
+  // and agreed. Same lawful basis as the public form, same record kept.
+  if (str('consent') !== 'true') {
+    throw new ApiError('กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัว (PDPA) และผู้ยืมให้ความยินยอมแล้ว');
+  }
+
   const photo = form.get('id_card_photo');
   if (!(photo instanceof File) || photo.size === 0) {
     throw new ApiError('กรุณาแนบรูปบัตรประชาชนเพื่อยืนยันตัวตน');
@@ -70,6 +83,10 @@ export const POST = route(async (req: Request) => {
       nationalIdEnc: encrypt(nationalId),
       nationalIdHash: hash,
       address,
+      phone,
+      lineId: str('line_id'),
+      consentAcceptedAt: new Date(),
+      consentVersion: CONSENT_VERSION,
       illnessDescription: str('illness_description'),
       idCardPhotoId,
       verified: true,
@@ -78,6 +95,13 @@ export const POST = route(async (req: Request) => {
     })
     .returning();
 
+  await logAction({
+    actor: user,
+    action: 'accept_consent',
+    targetType: 'borrower',
+    targetId: created.borrowerId,
+    details: `PDPA v${CONSENT_VERSION} (เจ้าหน้าที่ยืนยันแทน)`,
+  });
   await logAction({
     actor: user,
     action: 'register_borrower',

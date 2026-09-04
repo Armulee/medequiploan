@@ -23,6 +23,8 @@ export type BorrowerListItem = {
   last_name: string;
   national_id_masked: string;
   address: string;
+  phone: string;
+  line_id: string;
   registered_at: string;
   verified: boolean;
   self_registered: boolean;
@@ -33,6 +35,8 @@ export type BorrowerFull = BorrowerListItem & {
   illness_photo_url: string;
   illness_description: string;
   id_card_photo_url: string;
+  consent_accepted_at: string | null;
+  consent_version: string | null;
 };
 
 export type LoanRecord = {
@@ -61,6 +65,8 @@ export type BorrowRequest = {
   record_id: string | null;
   note: string;
   borrower_name: string;
+  borrower_phone?: string;
+  borrower_line_id?: string;
   equipment_name: string;
 };
 

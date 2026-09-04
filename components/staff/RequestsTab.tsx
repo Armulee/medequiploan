@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
+import Icon from '@/components/Icon';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDateTime } from '@/app/lib/format';
 import type { BorrowRequest } from '@/app/lib/types';
@@ -102,6 +103,17 @@ export default function RequestsTab() {
                   {r.request_id} · ส่งเมื่อ {thDateTime(r.requested_at)}
                   {r.note ? ` · ${r.note}` : ''}
                 </div>
+                {(r.borrower_phone || r.borrower_line_id) && (
+                  <div className="sub contact-line">
+                    <Icon name="phone" size={14} />
+                    {r.borrower_phone ? (
+                      <a href={`tel:${r.borrower_phone}`}>{r.borrower_phone}</a>
+                    ) : (
+                      '-'
+                    )}
+                    {r.borrower_line_id ? ` · LINE: ${r.borrower_line_id}` : ''}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span className={statusBadgeClass(r.status)}>{r.status}</span>

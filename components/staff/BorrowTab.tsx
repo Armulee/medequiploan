@@ -99,6 +99,7 @@ export default function BorrowTab() {
               </div>
               <div className="sub">
                 {picked.borrower_id} · {picked.national_id_masked}
+                {picked.phone ? ` · โทร ${picked.phone}` : ''}
               </div>
             </div>
             <button className="btn btn-sm btn-outline" onClick={() => setPicked(null)}>

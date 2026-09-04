@@ -12,6 +12,8 @@ export function borrowerListView(b: Borrower) {
     last_name: b.lastName,
     national_id_masked: mask(decrypt(b.nationalIdEnc)),
     address: b.address,
+    phone: b.phone,
+    line_id: b.lineId,
     registered_at: b.registeredAt,
     verified: b.verified,
     self_registered: b.selfRegistered,
@@ -25,6 +27,8 @@ export function borrowerFullView(b: Borrower) {
     illness_photo_url: fileUrl(b.illnessPhotoId),
     illness_description: b.illnessDescription,
     id_card_photo_url: fileUrl(b.idCardPhotoId),
+    consent_accepted_at: b.consentAcceptedAt,
+    consent_version: b.consentVersion,
   };
 }
 

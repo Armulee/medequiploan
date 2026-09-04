@@ -37,6 +37,16 @@ export const borrowers = pgTable('borrowers', {
   // indexed lookup instead of decrypting every row (what the old code did).
   nationalIdHash: varchar('national_id_hash', { length: 64 }).notNull().unique(),
   address: text('address').notNull(),
+  // Staff have to be able to ring people back — the form promises a callback,
+  // so a contact number is required. Not encrypted: staff read and dial it
+  // constantly, and it is far less sensitive than a national ID.
+  phone: varchar('phone', { length: 20 }).notNull().default(''),
+  lineId: varchar('line_id', { length: 64 }).notNull().default(''),
+  // Consent is recorded with its timestamp and the version of the notice that
+  // was shown. A bare boolean proves nothing later: PDPA asks what someone
+  // agreed to and when, and the wording of the notice will change over time.
+  consentAcceptedAt: timestamp('consent_accepted_at', { withTimezone: true }),
+  consentVersion: varchar('consent_version', { length: 16 }),
   illnessPhotoId: varchar('illness_photo_id', { length: 64 }),
   illnessDescription: text('illness_description').notNull().default(''),
   idCardPhotoId: varchar('id_card_photo_id', { length: 64 }),

@@ -37,6 +37,9 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   ไม่มี interactive transaction และการแยกอ่าน/เขียนเปิดช่องให้ race
 - **`db.execute()` คืน column เป็น snake_case** ไม่ใช่ camelCase ของ Drizzle — ต้อง map เอง
 - **สี/ฟอนต์**: ใช้ CSS variables ที่มีอยู่ อย่า hardcode สีใหม่กระจัดกระจาย
+- **PDPA consent**: ฟอร์มที่เก็บข้อมูลส่วนบุคคลต้องมี `ConsentNotice` และ **server ต้องเช็ค
+  `consent === 'true'` เอง** ไม่ใช่เชื่อ checkbox ฝั่ง client · บันทึกเวลา + `CONSENT_VERSION`
+  ทุกครั้ง ถ้าแก้ข้อความประกาศใน `lib/consent.ts` ต้องขึ้น version ด้วย
 - **Rate limit**: endpoint ที่เปิดสาธารณะหรือรับรหัสผ่าน ต้องผ่าน `hit()` จาก `lib/rate-limit.ts`
   · เก็บ counter ใน Postgres ไม่ใช่ memory (serverless แต่ละ instance ไม่แชร์กัน)
   · limiter ออกแบบให้ **fail open** — ถ้ามันพัง ต้องไม่ล็อกเจ้าหน้าที่ออกจากระบบทั้งองค์กร
@@ -68,7 +71,7 @@ npm run build             # production build
 
 - ยังไม่มีหน้าจอจัดการผู้ใช้ (เพิ่ม/ลบ/รีเซ็ตรหัสผ่านเจ้าหน้าที่) — schema มีคอลัมน์ `active` รออยู่แล้ว
 - ยังไม่ได้ย่อรูปก่อนอัปโหลด (รูป 2MB กิน bandwidth และ Blob quota เร็ว)
-- ยังไม่มี data retention / auto-delete policy ตาม PDPA
+- ยังไม่มี data retention / auto-delete policy ตาม PDPA (ประกาศระบุไว้ว่าเก็บ 2 ปีหลังยืมครั้งสุดท้าย แต่ยังไม่มีระบบลบอัตโนมัติ)
 - ยังไม่มี automated test suite
 - ยังไม่รองรับหลายภาษา (UI เป็นภาษาไทยล้วน)
 - ข้อมูลอยู่บนเซิร์ฟเวอร์นอกประเทศไทย (Neon/Vercel) — ถ้าต้องการให้อยู่ในไทยตาม PDPA
