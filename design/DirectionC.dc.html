@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&display=swap" />
+  <style>
+    body {
+      margin: 0;
+      background: #FBF6EE;
+      color: #23201B;
+      font-family: 'IBM Plex Sans Thai Looped', 'Noto Sans Thai', system-ui, sans-serif;
+      font-size: 19px;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .dp {
+      font-family: 'Noto Serif Thai', Georgia, serif;
+      font-weight: 600;
+      line-height: 1.35;
+      margin: 0;
+    }
+    a { color: #A63C09; text-decoration: none; }
+    a:hover { color: #7D2D06; text-decoration: underline; }
+    p { margin: 0; }
+  </style>
+</helmet>
+
+<div style="padding: 0 0 44px">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 44px 20px">
+    <div style="display: flex; align-items: center; gap: 13px">
+      <div style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #FF6C1D; display: flex; align-items: center; justify-content: center">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B8420C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" /></svg>
+      </div>
+      <span class="dp" style="font-size: 22px; font-weight: 700; letter-spacing: 0.2px">ศูนย์ยืม-คืนกายอุปกรณ์</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 26px; font-size: 18px; font-weight: 500">
+      <span style="color: #57503F">วิธีใช้งาน</span>
+      <span style="color: #57503F">อุปกรณ์ที่มี</span>
+      <span style="color: #57503F">ติดตามคำขอ</span>
+      <span style="color: #A63C09; font-weight: 600">เจ้าหน้าที่</span>
+    </div>
+  </div>
+
+  <div style="height: 3px; background: #FF6C1D; margin: 0 44px"></div>
+
+  <div style="padding: 40px 44px 36px">
+    <div style="display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; letter-spacing: 1.6px; color: #A63C09; margin-bottom: 20px">
+      <span style="width: 34px; height: 2px; background: #FF6C1D; display: block"></span>
+      ยืมฟรี ไม่มีค่าใช้จ่าย
+    </div>
+
+    <h1 style="font-size: 50px; font-weight: 600; margin-bottom: 20px; max-width: 16ch; line-height: 1.28">ยืมกายอุปกรณ์การแพทย์<br />ที่บ้านคุณ ได้ง่าย ๆ</h1>
+
+    <p style="font-size: 20px; color: #57503F; max-width: 48ch; margin-bottom: 30px; line-height: 1.85">วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน สำหรับผู้ป่วยและผู้ดูแล ส่งคำขอออนไลน์ได้ทันที ไม่ต้องสมัครสมาชิก</p>
+
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 40px">
+      <div style="background: #FF6C1D; color: #FFFFFF; font-size: 20px; font-weight: 600; padding: 0 32px; height: 60px; border-radius: 4px; display: flex; align-items: center; font-family: 'Noto Serif Thai', serif">ส่งคำขอยืมอุปกรณ์</div>
+      <div style="color: #A63C09; font-size: 20px; font-weight: 600; height: 60px; display: flex; align-items: center; border-bottom: 2px solid #FF6C1D; padding: 0 4px">ดูวิธีใช้งาน &#8594;</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; padding-top: 30px; border-top: 1.5px solid #E5D9C6; margin-bottom: 36px">
+      <div>
+        <div class="dp" style="font-size: 46px; font-weight: 700; color: #FF6C1D; line-height: 1; margin-bottom: 12px">หนึ่ง</div>
+        <div class="dp" style="font-size: 21px; margin-bottom: 6px">กรอกแบบฟอร์ม</div>
+        <p style="font-size: 17px; color: #57503F; line-height: 1.7">บอกข้อมูลผู้ยืมและอุปกรณ์ที่ต้องการ ใช้เวลาไม่ถึง 3 นาที</p>
+      </div>
+      <div>
+        <div class="dp" style="font-size: 46px; font-weight: 700; color: #FF6C1D; line-height: 1; margin-bottom: 12px">สอง</div>
+        <div class="dp" style="font-size: 21px; margin-bottom: 6px">รอเจ้าหน้าที่ตรวจ</div>
+        <p style="font-size: 17px; color: #57503F; line-height: 1.7">เจ้าหน้าที่ตรวจสอบคำขอและติดต่อกลับเพื่อนัดหมาย</p>
+      </div>
+      <div>
+        <div class="dp" style="font-size: 46px; font-weight: 700; color: #FF6C1D; line-height: 1; margin-bottom: 12px">สาม</div>
+        <div class="dp" style="font-size: 21px; margin-bottom: 6px">รับอุปกรณ์ไปใช้</div>
+        <p style="font-size: 17px; color: #57503F; line-height: 1.7">ใช้งานได้ทันที และนำมาคืนเมื่อเสร็จสิ้นการใช้งาน</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px">
+      <div style="background: #FFFFFF; border: 1.5px solid #E5D9C6; border-radius: 6px; padding: 24px">
+        <div class="dp" style="font-size: 20px; margin-bottom: 6px">อุปกรณ์ที่พร้อมให้ยืมตอนนี้</div>
+        <div style="height: 2px; background: #FF6C1D; width: 44px; margin-bottom: 12px"></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #EFE6D6">
+          <span style="font-weight: 500">วีลแชร์</span>
+          <span><span class="dp" style="font-size: 26px; font-weight: 700; color: #A63C09">5</span> <span style="font-size: 16px; color: #57503F">ชิ้น</span></span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #EFE6D6">
+          <span style="font-weight: 500">ไม้ค้ำยัน</span>
+          <span><span class="dp" style="font-size: 26px; font-weight: 700; color: #A63C09">12</span> <span style="font-size: 16px; color: #57503F">ชิ้น</span></span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 11px 0">
+          <span style="font-weight: 500; color: #8A8272">เตียงผู้ป่วย</span>
+          <span style="font-size: 16px; color: #8A8272">ไม่พร้อมให้ยืม</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="margin-bottom: 20px">
+          <label style="display: block; font-size: 18px; font-weight: 600; margin-bottom: 8px">เลขบัตรประชาชน (13 หลัก) *</label>
+          <div style="border: 1.5px solid #C9BBA2; border-bottom: 2.5px solid #FF6C1D; background: #FFFFFF; height: 58px; border-radius: 4px; display: flex; align-items: center; padding: 0 16px; font-size: 19px; color: #8C8272">เช่น 1103700230238</div>
+          <div style="font-size: 16px; color: #57503F; margin-top: 7px">ระบบจะเข้ารหัสข้อมูลนี้ก่อนบันทึก</div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <span style="border: 1.5px solid #D9A400; color: #8A5C00; font-size: 16px; font-weight: 600; padding: 5px 14px; border-radius: 3px">รอดำเนินการ</span>
+          <span style="border: 1.5px solid #1E7A3E; color: #146B34; font-size: 16px; font-weight: 600; padding: 5px 14px; border-radius: 3px">อนุมัติ</span>
+          <span style="border: 1.5px solid #C42B2B; color: #B02525; font-size: 16px; font-weight: 600; padding: 5px 14px; border-radius: 3px">เกินกำหนด</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin: 8px 44px 0; border-top: 1.5px solid #E5D9C6; padding-top: 18px; display: flex; gap: 32px; flex-wrap: wrap; font-size: 16px; color: #57503F">
+    <span><strong style="color: #23201B">หัวเรื่อง</strong> Noto Serif Thai — มีเชิง ให้ความรู้สึกน่าเชื่อถือ</span>
+    <span><strong style="color: #23201B">เนื้อหา</strong> IBM Plex Sans Thai Looped — มีหัว อ่านง่ายสำหรับผู้สูงอายุ</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

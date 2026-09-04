@@ -1,0 +1,23 @@
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&display=swap" />
+  <style>
+    body {
+      margin: 0;
+      background: #FDF9F4;
+      color: #1C1917;
+      font-family: 'IBM Plex Sans Thai Looped', 'Noto Sans Thai', system-ui, sans-serif;
+      font-size: 19px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, .dp {
+      font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans Thai Looped', system-ui, sans-serif;
+      font-weight: 600;
+      line-height: 1.25;
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+    p { margin: 0; }
+    a { color: #B8420C; text-decoration: none; }
+    a:hover { color: #8F3208; text-decoration: underline; }
+    ::selection { background: #FF6C1D; color: #FFFFFF; }
+  </style>

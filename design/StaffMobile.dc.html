@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&display=swap" />
+  <style>
+    body {
+      margin: 0;
+      background: #FDF9F4;
+      color: #1C1917;
+      font-family: 'IBM Plex Sans Thai Looped', 'Noto Sans Thai', system-ui, sans-serif;
+      font-size: 19px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, .dp {
+      font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans Thai Looped', system-ui, sans-serif;
+      font-weight: 600;
+      line-height: 1.25;
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+    p { margin: 0; }
+    a { color: #B8420C; text-decoration: none; }
+    a:hover { color: #8F3208; text-decoration: underline; }
+    ::selection { background: #FF6C1D; color: #FFFFFF; }
+  </style>
+</helmet>
+
+<div style="font-size: 18px; min-height: 1400px; display: flex; flex-direction: column">
+
+  <div style="background: #1C1917; color: #FFFFFF; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 10px; min-width: 0">
+      <div style="width: 32px; height: 32px; background: #FF6C1D; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" /></svg>
+      </div>
+      <span class="dp" style="font-size: 17px; font-weight: 700; color: #FFFFFF">ยืม-คืนกายอุปกรณ์</span>
+    </div>
+    <span style="border: 1.5px solid #6B625A; color: #FFFFFF; padding: 7px 13px; font-weight: 600; font-size: 15px; flex-shrink: 0">ออกจากระบบ</span>
+  </div>
+
+  <div style="padding: 22px 20px 26px; flex-grow: 1">
+    <div style="font-size: 16px; color: #5C5048; margin-bottom: 2px">ปิยะพร แสงทอง &#183; <span style="color: #B8420C; font-weight: 700">แอดมิน</span></div>
+    <h1 style="font-size: 30px; font-weight: 700; margin-bottom: 4px">ภาพรวมระบบ</h1>
+    <p style="font-size: 17px; color: #5C5048; margin-bottom: 20px">แตะที่ตัวเลขเพื่อดูรายการที่นับ</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px">
+      <div style="border: 2px solid #1C1917; background: #FFFFFF; padding: 16px 16px 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 16px; color: #5C5048; font-weight: 600; margin-bottom: 4px">
+          กำลังยืมอยู่
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B8420C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9 18 6-6-6-6" /></svg>
+        </div>
+        <div><span class="dp" style="font-size: 38px; font-weight: 700; line-height: 1">18</span> <span style="font-size: 15px; color: #5C5048">รายการ</span></div>
+      </div>
+      <div style="border: 2px solid #C42B2B; background: #FCF0EC; padding: 16px 16px 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 16px; color: #A62222; font-weight: 700; margin-bottom: 4px">
+          เกินกำหนดคืน
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C42B2B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9 18 6-6-6-6" /></svg>
+        </div>
+        <div><span class="dp" style="font-size: 38px; font-weight: 700; line-height: 1; color: #A62222">2</span> <span style="font-size: 15px; color: #A62222">รายการ</span></div>
+      </div>
+      <div style="border: 2px solid #D9A400; background: #FFF7E6; padding: 16px 16px 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 16px; color: #7A5100; font-weight: 700; margin-bottom: 4px">
+          คำขอรออนุมัติ
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9 18 6-6-6-6" /></svg>
+        </div>
+        <div><span class="dp" style="font-size: 38px; font-weight: 700; line-height: 1; color: #7A5100">3</span> <span style="font-size: 15px; color: #7A5100">คำขอ</span></div>
+      </div>
+      <div style="border: 2px solid #D9A400; background: #FFF7E6; padding: 16px 16px 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 16px; color: #7A5100; font-weight: 700; margin-bottom: 4px">
+          อุปกรณ์ใกล้หมด
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9 18 6-6-6-6" /></svg>
+        </div>
+        <div><span class="dp" style="font-size: 38px; font-weight: 700; line-height: 1; color: #7A5100">1</span> <span style="font-size: 15px; color: #7A5100">รายการ</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px">
+      <div style="border: 2px solid #D6C7B6; background: #FFFFFF; padding: 14px 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <span style="font-size: 17px; color: #5C5048; font-weight: 600">ผู้ยืมที่ลงทะเบียน</span>
+        <span><span class="dp" style="font-size: 27px; font-weight: 700">64</span> <span style="font-size: 15px; color: #5C5048">คน</span></span>
+      </div>
+      <div style="border: 2px solid #D6C7B6; background: #FFFFFF; padding: 14px 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <span style="font-size: 17px; color: #5C5048; font-weight: 600">อุปกรณ์ทั้งหมด</span>
+        <span><span class="dp" style="font-size: 27px; font-weight: 700">37</span> <span style="font-size: 15px; color: #5C5048">ชิ้น</span></span>
+      </div>
+    </div>
+
+    <div style="border: 2px solid #C42B2B; background: #FFFFFF; padding: 20px 20px 22px">
+      <h2 style="font-size: 21px; margin-bottom: 4px; color: #A62222">เกินกำหนดคืน</h2>
+      <div style="height: 3px; background: #C42B2B; width: 46px; margin-bottom: 16px"></div>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="border-left: 5px solid #C42B2B; padding: 2px 0 2px 13px">
+          <div style="font-weight: 700; font-size: 18px">สมชาย ใจดี</div>
+          <div style="font-size: 16px; color: #5C5048; line-height: 1.6">วีลแชร์ &#183; ครบกำหนด 20 ส.ค. 2569</div>
+          <div style="font-size: 16px; color: #A62222; font-weight: 700">เกินมาแล้ว 15 วัน</div>
+        </div>
+        <div style="border-left: 5px solid #C42B2B; padding: 2px 0 2px 13px">
+          <div style="font-weight: 700; font-size: 18px">มาลี สุขใจ</div>
+          <div style="font-size: 16px; color: #5C5048; line-height: 1.6">ไม้ค้ำยัน &#183; ครบกำหนด 30 ส.ค. 2569</div>
+          <div style="font-size: 16px; color: #A62222; font-weight: 700">เกินมาแล้ว 5 วัน</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar: 5 primary + more, so targets stay 60px wide instead of 55 -->
+  <div style="border-top: 2px solid #1C1917; background: #FFFFFF; display: flex; padding-bottom: 6px">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 2px 9px; background: #FF6C1D">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>
+      <span style="font-size: 13px; font-weight: 700; color: #1C1917">ภาพรวม</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 2px 9px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C5048" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+      <span style="font-size: 13px; font-weight: 600; color: #5C5048">ยืม-คืน</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 2px 9px; position: relative">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C5048" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="m9 15 2 2 4-4" /></svg>
+      <span style="font-size: 13px; font-weight: 600; color: #5C5048">คำขอ</span>
+      <span style="position: absolute; top: 7px; right: 14px; background: #C42B2B; color: #FFFFFF; font-size: 12px; font-weight: 700; padding: 0 6px; line-height: 18px">3</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 2px 9px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C5048" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
+      <span style="font-size: 13px; font-weight: 600; color: #5C5048">สต็อก</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 2px 9px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C5048" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+      <span style="font-size: 13px; font-weight: 600; color: #5C5048">อื่น ๆ</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "ทุกหน้า (จอใหญ่)" },
+    { "id": "page-2", "name": "มือถือ" },
+    { "id": "page-3", "name": "3 ทิศทางให้เลือก" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "page": "page-1", "title": "หน้าแรก", "x": 0, "y": 0, "w": 1280, "h": 2000 },
+    { "file": "Request.dc.html", "page": "page-1", "title": "ส่งคำขอยืม", "x": 1400, "y": 0, "w": 1280, "h": 2100 },
+    { "file": "Tracking.dc.html", "page": "page-1", "title": "ติดตามคำขอ", "x": 2800, "y": 0, "w": 1280, "h": 1620 },
+    { "file": "StaffDashboard.dc.html", "page": "page-1", "title": "เจ้าหน้าที่ · ภาพรวม", "x": 0, "y": 2240, "w": 1280, "h": 1080 },
+    { "file": "StaffQueue.dc.html", "page": "page-1", "title": "เจ้าหน้าที่ · คำขอ + กล่องอนุมัติ", "x": 1400, "y": 2240, "w": 1280, "h": 1280 },
+    { "file": "StaffStock.dc.html", "page": "page-1", "title": "เจ้าหน้าที่ · สต็อก 2 ขั้นตอน", "x": 2800, "y": 2240, "w": 1280, "h": 1280 },
+    { "file": "StaffLogin.dc.html", "page": "page-1", "title": "เข้าสู่ระบบเจ้าหน้าที่", "x": 0, "y": 3640, "w": 900, "h": 880 },
+
+    { "file": "HomeMobile.dc.html", "page": "page-2", "title": "หน้าแรก · มือถือ", "x": 0, "y": 0, "w": 390, "h": 3000 },
+    { "file": "RequestMobile.dc.html", "page": "page-2", "title": "ส่งคำขอ · มือถือ", "x": 500, "y": 0, "w": 390, "h": 1860 },
+    { "file": "StaffMobile.dc.html", "page": "page-2", "title": "เจ้าหน้าที่ · มือถือ", "x": 1000, "y": 0, "w": 390, "h": 1420 },
+
+    { "file": "DirectionA.dc.html", "page": "page-3", "title": "A · ป้ายบอกทาง (ที่ใช้อยู่)", "x": 0, "y": 0, "w": 900, "h": 1320 },
+    { "file": "DirectionB.dc.html", "page": "page-3", "title": "B · การ์ดใหญ่", "x": 1000, "y": 0, "w": 900, "h": 1320 },
+    { "file": "DirectionC.dc.html", "page": "page-3", "title": "C · วารสารมูลนิธิ", "x": 2000, "y": 0, "w": 900, "h": 1320 }
+  ],
+  "annotations": [
+    {
+      "id": "note-system",
+      "page": "page-1",
+      "x": 0,
+      "y": -190,
+      "w": 620,
+      "text": "ทิศทาง A · ป้ายบอกทาง\nเนื้อหา 19px / บรรทัด 1.75 · ปุ่มสูง 62-68px · ช่องกรอกสูง 58px\nหัวเรื่อง IBM Plex Sans Thai · เนื้อหา IBM Plex Sans Thai Looped (มีหัว)\nส้ม #FF6C1D ใช้เป็นพื้นเท่านั้น · ตัวหนังสือสีส้มใช้ #B8420C (ผ่าน WCAG AA)"
+    },
+    {
+      "id": "note-tabbar",
+      "page": "page-2",
+      "x": 1000,
+      "y": -230,
+      "w": 400,
+      "text": "ข้อเสนอ: แถบล่างเหลือ 5 ปุ่ม + \"อื่น ๆ\"\nตอนนี้ admin มี 7 แท็บ บนจอ 390px = ปุ่มละ 55px\nซึ่งแคบเกินไปสำหรับนิ้วคนอายุ 50-60\nถ้าไม่เอา บอกได้ กูเปลี่ยนกลับเป็น 7 ปุ่มให้"
+    },
+    {
+      "id": "note-pick",
+      "page": "page-3",
+      "x": 0,
+      "y": -210,
+      "w": 700,
+      "text": "ทั้งสามแบบใช้เนื้อหาฟอนต์เดียวกัน (IBM Plex Sans Thai Looped — ตัวมีหัว\nที่คนรุ่น 50-60 หัดอ่านมา) ต่างกันที่ฟอนต์หัวเรื่อง เส้นกรอบ และวิธีวาง\nA เอามาทำเต็มทุกหน้าแล้วในหน้า \"ทุกหน้า\" · ถ้าชอบ B หรือ C บอกมา เดี๋ยวทำใหม่ให้"
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}
