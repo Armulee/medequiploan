@@ -489,10 +489,97 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
    directly below the hero, so the header's #stock link still lands on it. */
 .stock-band { max-width: 1080px; margin: 0 auto; padding: 32px 24px 0; }
 .stock-band .hero-panel { padding: 22px 26px; }
-.stock-band .stock-list {
+
+/* ---------- Equipment carousel (Swiper, fade) ---------- */
+.stock-carousel { margin-top: 6px; }
+
+.stock-slide {
+  margin: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  text-align: center;
+}
+.stock-shot {
+  height: 240px;
+  display: flex; align-items: center; justify-content: center;
+}
+.stock-shot picture { display: block; }
+.stock-shot img { display: block; max-height: 240px; width: auto; max-width: 100%; object-fit: contain; }
+
+.stock-slide figcaption { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.stock-name {
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+  font-weight: 600; font-size: 1.2rem; line-height: 1.35;
+}
+.stock-avail {
+  background: var(--green-bg); color: var(--green);
+  font-weight: 700; font-size: 0.9rem;
+  padding: 4px 14px; border-radius: 999px;
+}
+.stock-avail.is-out { background: #F1EBE5; color: var(--text-muted); }
+
+/* Two rows: the buttons and dots on the first, each button's destination
+   named underneath it on the second. */
+.stock-nav {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 0 28px;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.stock-nav > * { min-width: 0; }
+
+.stock-navbtn {
+  grid-row: 1;
+  width: 46px; height: 46px; border-radius: 50%; padding: 0;
+  background: var(--orange-bg); color: var(--orange-dark);
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: none;
+}
+.stock-navbtn:hover { background: var(--orange-light); border-color: var(--orange-mid); }
+.stock-navbtn-prev { grid-column: 1; justify-self: start; }
+.stock-navbtn-next { grid-column: 3; justify-self: end; }
+
+.stock-dots { grid-row: 1; grid-column: 2; display: flex; align-items: center; }
+/* The dot is 9px; the button around it is not, or it would be untappable. */
+.stock-dot {
+  width: 28px; height: 40px; padding: 0;
+  border: none; background: none; box-shadow: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.stock-dot::before {
+  content: '';
+  display: block;
+  width: 9px; height: 9px; border-radius: 999px;
+  background: var(--border);
+  transition: width 0.25s var(--ease), background 0.25s var(--ease);
+}
+.stock-dot:hover::before { background: var(--orange-mid); }
+.stock-dot.is-on::before { width: 24px; background: var(--orange); }
+
+.stock-navlabel {
+  grid-row: 2;
+  font-size: 0.85rem; color: var(--text-muted); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* No justify-self: the label has to stretch across its track for the
+   ellipsis to have something to clip against. Left to size itself it just
+   overflows, and on a phone the two names print on top of each other. */
+.stock-navlabel-prev { grid-column: 1; text-align: left; }
+.stock-navlabel-next { grid-column: 3; text-align: right; }
+
+@media (max-width: 700px) {
+  .stock-shot { height: 190px; }
+  .stock-shot img { max-height: 190px; }
+  .stock-name { font-size: 1.08rem; }
+  /* Every pixel the pager and the buttons give up is a pixel the two names
+     get: at 393px the row has about 300px to divide between all four. */
+  .stock-nav { gap: 6px 8px; }
+  .stock-navbtn { width: 40px; height: 40px; }
+  .stock-dot { width: 22px; height: 36px; }
+  .stock-navlabel { font-size: 0.8rem; }
 }
 
 .hero-eyebrow {

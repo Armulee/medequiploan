@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Icon from '@/components/Icon';
 import HeroPhoto from '@/components/landing/HeroPhoto';
 import SiteHeader from '@/components/landing/SiteHeader';
-import StockPreview from '@/components/landing/StockPreview';
+import StockCarousel from '@/components/landing/StockCarousel';
 import { EQUIPMENT_KINDS, SITE_DESCRIPTION, SITE_NAME, absolute, siteUrl } from '@/lib/site';
 import { landingPageJsonLd } from '@/lib/structured-data';
 
@@ -140,9 +140,7 @@ export default function LandingPage() {
             <Icon name="box" size={20} stroke="var(--orange-dark)" />
             อุปกรณ์ที่พร้อมให้ยืมตอนนี้
           </h3>
-          <div className="stock-list">
-            <StockPreview />
-          </div>
+          <StockCarousel />
         </div>
       </section>
 
