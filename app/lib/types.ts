@@ -1,0 +1,75 @@
+export type SessionUser = {
+  user_id: string;
+  username: string;
+  role: 'admin' | 'staff';
+  name: string;
+};
+
+export type Equipment = {
+  equipment_id: string;
+  name: string;
+  category: string;
+  total_qty: number;
+  available_qty: number;
+  low_stock_threshold: number;
+  borrowed_qty: number;
+  low_stock: boolean;
+};
+
+export type BorrowerListItem = {
+  borrower_id: string;
+  first_name: string;
+  last_name: string;
+  national_id_masked: string;
+  address: string;
+  registered_at: string;
+  verified: boolean;
+  self_registered: boolean;
+};
+
+export type BorrowerFull = BorrowerListItem & {
+  national_id: string;
+  illness_photo_url: string;
+  illness_description: string;
+  id_card_photo_url: string;
+};
+
+export type LoanRecord = {
+  record_id: string;
+  borrower_id: string;
+  equipment_id: string;
+  borrow_date: string;
+  due_date: string | null;
+  return_date: string | null;
+  status: string;
+  condition_on_return: string;
+  handled_by_name: string;
+  received_by_name: string;
+  source: string;
+  borrower_name: string;
+  equipment_name: string;
+};
+
+export type BorrowRequest = {
+  request_id: string;
+  borrower_id: string;
+  equipment_id: string;
+  requested_at: string;
+  status: string;
+  approved_by: string | null;
+  record_id: string | null;
+  note: string;
+  borrower_name: string;
+  equipment_name: string;
+};
+
+export type AuditEntry = {
+  log_id: string;
+  actor_user_id: string;
+  actor_name: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  details: string;
+  at: string;
+};

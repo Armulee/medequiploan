@@ -1,0 +1,190 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import Alert from '@/components/Alert';
+import Icon from '@/components/Icon';
+import { api, apiForm } from '@/app/lib/api';
+import { isValidThaiNationalId } from '@/app/lib/format';
+import type { Equipment } from '@/app/lib/types';
+
+export default function RequestPage() {
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    first_name: '',
+    last_name: '',
+    national_id: '',
+    address: '',
+    equipment_id: '',
+    illness_description: '',
+  });
+  const [photo, setPhoto] = useState<File | null>(null);
+
+  useEffect(() => {
+    api<{ equipment: Equipment[] }>('/api/equipment')
+      .then((d) => setEquipment(d.equipment))
+      .catch(() => setError('ไม่สามารถโหลดรายการอุปกรณ์ได้ กรุณารีเฟรชหน้าอีกครั้ง'));
+  }, []);
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+
+    // Check the checksum before sending so an obvious typo is caught without a
+    // round trip; the server validates again regardless.
+    if (!isValidThaiNationalId(form.national_id)) {
+      setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (13 หลัก)');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
+      if (photo) fd.append('illness_photo', photo);
+
+      const res = await apiForm<{ request: { request_id: string } }>('/api/requests', fd);
+      setRequestId(res.request.request_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่');
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <header className="app-header">
+        <Link href="/" className="brand" style={{ color: 'white' }}>
+          <span className="dot" />
+          ศูนย์ยืม-คืนกายอุปกรณ์
+        </Link>
+      </header>
+
+      <div className="container" style={{ paddingTop: 20 }}>
+        {requestId ? (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'var(--green-bg)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 14px',
+              }}
+            >
+              <Icon name="check" size={28} stroke="var(--green)" strokeWidth={2.5} />
+            </div>
+            <h2>ส่งคำขอเรียบร้อยแล้ว</h2>
+            <p style={{ color: 'var(--text-muted)' }}>
+              หมายเลขคำขอของคุณคือ <strong>{requestId}</strong>
+              <br />
+              เจ้าหน้าที่จะตรวจสอบและติดต่อกลับเพื่อนัดรับอุปกรณ์
+            </p>
+            <button className="btn btn-secondary" onClick={() => window.location.reload()}>
+              ส่งคำขอใหม่
+            </button>
+          </div>
+        ) : (
+          <div className="card">
+            <h1>ส่งคำขอยืมอุปกรณ์</h1>
+            <p style={{ color: 'var(--text-muted)', marginTop: -6 }}>
+              กรอกข้อมูลให้ครบถ้วน เจ้าหน้าที่จะตรวจสอบและติดต่อกลับ ไม่ต้องเข้าสู่ระบบ
+            </p>
+
+            <Alert kind="error">{error}</Alert>
+
+            <form onSubmit={onSubmit}>
+              <div className="row">
+                <div className="field">
+                  <label htmlFor="first_name">ชื่อ *</label>
+                  <input id="first_name" value={form.first_name} onChange={set('first_name')} required />
+                </div>
+                <div className="field">
+                  <label htmlFor="last_name">นามสกุล *</label>
+                  <input id="last_name" value={form.last_name} onChange={set('last_name')} required />
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="national_id">เลขบัตรประชาชน (13 หลัก) *</label>
+                <input
+                  id="national_id"
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="เช่น 1103700230238"
+                  value={form.national_id}
+                  // Strip anything that isn't a digit as it's typed, so the
+                  // field can only ever hold a well-formed ID.
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, national_id: e.target.value.replace(/\D/g, '').slice(0, 13) }))
+                  }
+                  required
+                />
+                <div className="hint">
+                  ใช้สำหรับตรวจสอบสิทธิ์และยืนยันตัวตน ระบบจะเข้ารหัสข้อมูลนี้ก่อนบันทึก
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="address">ที่อยู่ *</label>
+                <textarea id="address" value={form.address} onChange={set('address')} required />
+              </div>
+
+              <div className="field">
+                <label htmlFor="equipment_id">อุปกรณ์ที่ต้องการยืม *</label>
+                <select id="equipment_id" value={form.equipment_id} onChange={set('equipment_id')} required>
+                  <option value="">-- เลือกอุปกรณ์ --</option>
+                  {equipment.map((e) => (
+                    <option key={e.equipment_id} value={e.equipment_id} disabled={e.available_qty <= 0}>
+                      {e.name} (เหลือ {e.available_qty} ชิ้น)
+                      {e.available_qty <= 0 ? ' — ไม่พร้อมให้ยืม' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="illness_description">อธิบายอาการเพิ่มเติม</label>
+                <textarea
+                  id="illness_description"
+                  placeholder="เช่น ขาอ่อนแรง เดินลำบาก ต้องใช้พยุงเดิน"
+                  value={form.illness_description}
+                  onChange={set('illness_description')}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="illness_photo">ภาพประกอบอาการป่วย (ถ้ามี)</label>
+                <input
+                  id="illness_photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+                {submitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอยืม'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <p className="footer-note">
+          สำหรับเจ้าหน้าที่ <Link href="/staff">เข้าสู่ระบบที่นี่</Link> · <Link href="/">กลับหน้าแรก</Link>
+        </p>
+      </div>
+    </>
+  );
+}
