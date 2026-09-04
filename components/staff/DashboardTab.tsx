@@ -82,7 +82,7 @@ export default function DashboardTab() {
                     {o.borrower_name} · ครบกำหนด {thDate(o.due_date)}
                   </div>
                 </div>
-                <span className="badge badge-red">เกิน {o.days_overdue} วัน</span>
+                <span className="badge badge-overdue">เกิน {o.days_overdue} วัน</span>
               </div>
             ))}
           </div>
@@ -103,7 +103,7 @@ export default function DashboardTab() {
                     คงเหลือ {e.available_qty} จากทั้งหมด {e.total_qty}
                   </div>
                 </div>
-                <span className="badge badge-yellow">ใกล้หมด</span>
+                <span className="badge badge-low">ใกล้หมด</span>
               </div>
             ))}
           </div>

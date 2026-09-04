@@ -1,0 +1,1 @@
+ALTER TABLE "borrowers" ADD COLUMN IF NOT EXISTS "email" varchar(254) DEFAULT '' NOT NULL;

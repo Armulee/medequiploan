@@ -20,6 +20,12 @@ export const RULES = {
   loginPerIp: { limit: 20, windowSeconds: 15 * 60 },
   /** Public borrow requests, which create borrower rows and upload photos. */
   publicRequestPerIp: { limit: 5, windowSeconds: 60 * 60 },
+  /**
+   * Status lookups. Unauthenticated and keyed on a national ID, so without a
+   * ceiling it could be walked; 15 an hour is far more than anyone checking
+   * their own request needs.
+   */
+  trackingPerIp: { limit: 15, windowSeconds: 60 * 60 },
 } satisfies Record<string, Rule>;
 
 export type Decision = { allowed: boolean; remaining: number; retryAfterSeconds: number };

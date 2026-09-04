@@ -19,11 +19,20 @@ export function thDateTime(iso: string | Date | null | undefined): string {
   });
 }
 
+// Names must match the variants defined in globals.css — badge-green and
+// friends were invented here and matched nothing, so every status rendered as
+// unstyled text with no pill behind it.
+const BADGE_VARIANT: Record<string, string> = {
+  คืนแล้ว: 'badge-returned',
+  อนุมัติ: 'badge-approved',
+  เกินกำหนด: 'badge-overdue',
+  ปฏิเสธ: 'badge-rejected',
+  รอดำเนินการ: 'badge-pending',
+  ยืมอยู่: 'badge-active',
+};
+
 export function statusBadgeClass(status: string): string {
-  if (status === 'คืนแล้ว' || status === 'อนุมัติ') return 'badge badge-green';
-  if (status === 'เกินกำหนด' || status === 'ปฏิเสธ') return 'badge badge-red';
-  if (status === 'รอดำเนินการ') return 'badge badge-yellow';
-  return 'badge badge-orange';
+  return `badge ${BADGE_VARIANT[status] ?? 'badge-active'}`;
 }
 
 export function isValidThaiNationalId(id: string): boolean {

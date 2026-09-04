@@ -14,6 +14,7 @@ export function borrowerListView(b: Borrower) {
     address: b.address,
     phone: b.phone,
     line_id: b.lineId,
+    email: b.email,
     registered_at: b.registeredAt,
     verified: b.verified,
     self_registered: b.selfRegistered,

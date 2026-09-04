@@ -41,6 +41,7 @@ export default function LandingPage() {
         <nav>
           <a href="#how">วิธีใช้งาน</a>
           <a href="#stock">อุปกรณ์ที่มี</a>
+          <Link href="/tracking">ติดตามคำขอ</Link>
           <Link href="/staff">เจ้าหน้าที่</Link>
         </nav>
       </header>
@@ -125,6 +126,9 @@ export default function LandingPage() {
         <p>ส่งคำขอวันนี้ เจ้าหน้าที่จะติดต่อกลับเพื่อนัดหมายรับอุปกรณ์โดยเร็วที่สุด</p>
         <Link href="/request" className="btn btn-primary btn-lg">
           ส่งคำขอยืมอุปกรณ์
+        </Link>
+        <Link href="/tracking" className="btn btn-outline btn-lg cta-secondary">
+          ติดตามคำขอที่ส่งไว้
         </Link>
       </div>
 

@@ -7,11 +7,14 @@ import ConsentNotice from '@/components/ConsentNotice';
 import Icon from '@/components/Icon';
 import { api, apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
-import { normalisePhone } from '@/lib/validate';
+import { normaliseEmail, normalisePhone } from '@/lib/validate';
+import { stashNationalId } from '@/app/lib/handoff';
+import { useRouter } from 'next/navigation';
 import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { Equipment } from '@/app/lib/types';
 
 export default function RequestPage() {
+  const router = useRouter();
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -24,6 +27,7 @@ export default function RequestPage() {
     address: '',
     phone: '',
     line_id: '',
+    email: '',
     equipment_id: '',
     illness_description: '',
   });
@@ -54,6 +58,10 @@ export default function RequestPage() {
       setError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
       return;
     }
+    if (normaliseEmail(form.email) === null) {
+      setError('อีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+      return;
+    }
     if (!consent) {
       setError('กรุณาอ่านและยอมรับประกาศความเป็นส่วนตัว (PDPA) ก่อนส่งคำขอ');
       return;
@@ -67,6 +75,7 @@ export default function RequestPage() {
       if (photo) fd.append('illness_photo', photo);
 
       const res = await apiForm<{ request: { request_id: string } }>('/api/requests', fd);
+      stashNationalId(form.national_id);
       setRequestId(res.request.request_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่');
@@ -111,8 +120,8 @@ export default function RequestPage() {
               <br />
               เจ้าหน้าที่จะตรวจสอบและติดต่อกลับเพื่อนัดรับอุปกรณ์
             </p>
-            <button className="btn btn-secondary" onClick={() => window.location.reload()}>
-              ส่งคำขอใหม่
+            <button className="btn btn-primary btn-lg" onClick={() => router.push('/tracking')}>
+              ติดตามสถานะคำขอ
             </button>
           </div>
         ) : (
@@ -173,7 +182,6 @@ export default function RequestPage() {
                     onChange={set('phone')}
                     required
                   />
-                  <div className="hint">เจ้าหน้าที่จะโทรกลับเบอร์นี้เพื่อนัดรับอุปกรณ์</div>
                 </div>
                 <div className="field">
                   <label htmlFor="line_id">LINE ID</label>
@@ -185,6 +193,18 @@ export default function RequestPage() {
                     onChange={set('line_id')}
                   />
                 </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="email">อีเมล</label>
+                <input
+                  id="email"
+                  type="email"
+                  inputMode="email"
+                  placeholder="ถ้ามี (ไม่บังคับ)"
+                  value={form.email}
+                  onChange={set('email')}
+                />
               </div>
 
               <div className="field">

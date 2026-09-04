@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { borrowers, equipment, requests } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
-import { isValidThaiNationalId, normalisePhone } from '@/lib/validate';
+import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
 import { logAction } from '@/lib/audit';
 import { saveUpload } from '@/lib/storage';
@@ -41,6 +41,9 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
   }
 
+  const email = normaliseEmail(str('email'));
+  if (email === null) throw new ApiError('อีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+
   // Enforced on the server, not just by the checkbox: consent is the lawful
   // basis for holding any of this, so a request that skips it must be refused
   // however it was sent.
@@ -75,6 +78,7 @@ export const POST = route(async (req: Request) => {
       .set({
         phone,
         lineId: lineId || existing.lineId,
+        email: email || existing.email,
         consentAcceptedAt: new Date(),
         consentVersion: CONSENT_VERSION,
         ...(photoId ? { illnessPhotoId: photoId } : {}),
@@ -91,6 +95,7 @@ export const POST = route(async (req: Request) => {
         address,
         phone,
         lineId,
+        email,
         consentAcceptedAt: new Date(),
         consentVersion: CONSENT_VERSION,
         illnessPhotoId: photoId,

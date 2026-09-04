@@ -42,6 +42,7 @@ export const borrowers = pgTable('borrowers', {
   // constantly, and it is far less sensitive than a national ID.
   phone: varchar('phone', { length: 20 }).notNull().default(''),
   lineId: varchar('line_id', { length: 64 }).notNull().default(''),
+  email: varchar('email', { length: 254 }).notNull().default(''),
   // Consent is recorded with its timestamp and the version of the notice that
   // was shown. A bare boolean proves nothing later: PDPA asks what someone
   // agreed to and when, and the wording of the notice will change over time.

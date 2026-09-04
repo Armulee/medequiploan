@@ -17,3 +17,16 @@ export function normalisePhone(input: string): string | null {
   if (!/^0\d{8,9}$/.test(digits)) return null;
   return digits;
 }
+
+/**
+ * Optional field, so an empty string is valid. Deliberately permissive — the
+ * only way to truly validate an address is to send to it, and rejecting an
+ * unusual but real address is worse than accepting a typo in a field nobody
+ * is required to fill in.
+ */
+export function normaliseEmail(input: string): string | null {
+  const value = input.trim();
+  if (!value) return '';
+  if (value.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return null;
+  return value.toLowerCase();
+}

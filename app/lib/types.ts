@@ -25,6 +25,7 @@ export type BorrowerListItem = {
   address: string;
   phone: string;
   line_id: string;
+  email: string;
   registered_at: string;
   verified: boolean;
   self_registered: boolean;

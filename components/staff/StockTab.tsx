@@ -61,7 +61,7 @@ export default function StockTab({ isAdmin }: { isAdmin: boolean }) {
                   <div className="title">
                     {e.name}
                     {e.low_stock && (
-                      <span className="badge badge-yellow" style={{ marginLeft: 8 }}>
+                      <span className="badge badge-low" style={{ marginLeft: 8 }}>
                         <Icon name="alert" size={12} /> สต็อกใกล้หมด
                       </span>
                     )}

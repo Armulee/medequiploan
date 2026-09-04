@@ -16,6 +16,7 @@ const EMPTY = {
   address: '',
   phone: '',
   line_id: '',
+  email: '',
   illness_description: '',
 };
 
@@ -139,6 +140,11 @@ export default function RegisterTab() {
             <label htmlFor="reg_line">LINE ID</label>
             <input id="reg_line" type="text" placeholder="ถ้ามี" value={form.line_id} onChange={set('line_id')} />
           </div>
+        </div>
+
+        <div className="field">
+          <label htmlFor="reg_email">อีเมล</label>
+          <input id="reg_email" type="email" placeholder="ถ้ามี" value={form.email} onChange={set('email')} />
         </div>
 
         <div className="field">

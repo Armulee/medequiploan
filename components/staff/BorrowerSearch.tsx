@@ -77,7 +77,7 @@ export default function BorrowerSearch({
                     {!b.verified && ' · ยังไม่ยืนยันตัวตน'}
                   </div>
                 </div>
-                <span className="badge badge-orange">เลือก</span>
+                <span className="badge badge-active">เลือก</span>
               </button>
             ))}
           </div>

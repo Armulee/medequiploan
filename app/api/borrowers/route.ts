@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { borrowers } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
-import { isValidThaiNationalId, normalisePhone } from '@/lib/validate';
+import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
 import { logAction } from '@/lib/audit';
 import { saveUpload } from '@/lib/storage';
@@ -54,6 +54,9 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
   }
 
+  const email = normaliseEmail(str('email'));
+  if (email === null) throw new ApiError('อีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+
   // The staff member confirms the person in front of them was read the notice
   // and agreed. Same lawful basis as the public form, same record kept.
   if (str('consent') !== 'true') {
@@ -85,6 +88,7 @@ export const POST = route(async (req: Request) => {
       address,
       phone,
       lineId: str('line_id'),
+      email,
       consentAcceptedAt: new Date(),
       consentVersion: CONSENT_VERSION,
       illnessDescription: str('illness_description'),

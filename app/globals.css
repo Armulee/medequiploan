@@ -539,6 +539,8 @@ button.list-row {
 
 /* ---------- PDPA consent ---------- */
 .consent-box {
+  /* Explicit, because the box also sits inside centred cards. */
+  text-align: left;
   margin: 18px 0;
   padding: 14px 16px;
   border: 1.5px solid var(--border);
@@ -600,3 +602,15 @@ button.list-row {
 /* Phone number in the queue — tappable on a phone, so staff can just call. */
 .contact-line { display: inline-flex; align-items: center; gap: 5px; margin-top: 3px; }
 .contact-line a { font-weight: 600; }
+
+/* Secondary action in the closing call-to-action band, on the orange fill. */
+.cta-band .cta-secondary {
+  margin-left: 10px;
+  background: transparent;
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+.cta-band .cta-secondary:hover { background: rgba(255, 255, 255, 0.15); }
+@media (max-width: 560px) {
+  .cta-band .cta-secondary { margin: 10px 0 0; display: block; }
+}
