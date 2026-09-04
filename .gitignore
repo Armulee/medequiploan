@@ -18,3 +18,4 @@ uploads/illness_photos/*
 # ข้อมูล JSON ของระบบเดิม (ย้ายไป PostgreSQL แล้ว)
 data/*.json
 data/.encryption_key
+tsconfig.tsbuildinfo
