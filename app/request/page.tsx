@@ -70,6 +70,11 @@ export default function RequestPage() {
       </header>
 
       <div className="container" style={{ paddingTop: 20 }}>
+        <Link href="/" className="back-link">
+          <Icon name="chevron-left" size={20} strokeWidth={2.5} />
+          กลับหน้าแรก
+        </Link>
+
         {requestId ? (
           <div className="card" style={{ textAlign: 'center' }}>
             <div
@@ -199,9 +204,6 @@ export default function RequestPage() {
           </div>
         )}
 
-        <p className="footer-note">
-          สำหรับเจ้าหน้าที่ <Link href="/staff">เข้าสู่ระบบที่นี่</Link> · <Link href="/">กลับหน้าแรก</Link>
-        </p>
       </div>
     </>
   );

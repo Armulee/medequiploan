@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { ConfigError } from './api';
 
 // AES-256-GCM for national ID numbers at rest.
 //
@@ -10,14 +11,17 @@ import crypto from 'crypto';
 function loadKey(): Buffer {
   const raw = process.env.ENCRYPTION_KEY;
   if (!raw) {
-    throw new Error(
-      'ไม่พบ ENCRYPTION_KEY — ตั้งค่าก่อนใช้งาน (สุ่มด้วย: openssl rand -base64 32) ' +
-        'ถ้าคีย์นี้เปลี่ยน เลขบัตรที่เข้ารหัสไว้เดิมจะถอดรหัสไม่ได้อีกเลย'
+    throw new ConfigError(
+      'ไม่พบ ENCRYPTION_KEY — ตั้งค่าใน Vercel Project Settings ' +
+        '(สุ่มด้วย: openssl rand -base64 32) ถ้าคีย์นี้เปลี่ยน เลขบัตรที่เข้ารหัสไว้เดิมจะอ่านไม่ออกอีกเลย'
     );
   }
   const key = Buffer.from(raw, 'base64');
   if (key.length !== 32) {
-    throw new Error('ENCRYPTION_KEY ต้องเป็น base64 ของข้อมูล 32 ไบต์ (openssl rand -base64 32)');
+    throw new ConfigError(
+      `ENCRYPTION_KEY ต้องเป็น base64 ของข้อมูล 32 ไบต์พอดี (ตอนนี้ได้ ${key.length} ไบต์) ` +
+        'สุ่มใหม่ด้วย: openssl rand -base64 32'
+    );
   }
   return key;
 }

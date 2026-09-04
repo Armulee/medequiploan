@@ -12,6 +12,22 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * A required environment variable is missing or malformed.
+ *
+ * Separated from ApiError because it is an operator problem, not a caller
+ * problem, and because hiding it behind the generic 500 made a misconfigured
+ * deployment nearly impossible to diagnose from the outside — the symptom was
+ * an unexplained 500 on the public form. The variable's name is safe to
+ * surface; its value is never included.
+ */
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigError';
+  }
+}
+
 export function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
 }
@@ -24,6 +40,12 @@ export function errorResponse(err: unknown) {
     return NextResponse.json({ error: err.message }, { status: err.status, headers });
   }
   console.error(err);
+  if (err instanceof ConfigError) {
+    return NextResponse.json(
+      { error: `ระบบยังตั้งค่าไม่ครบ: ${err.message}`, code: 'CONFIG' },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ (server error)' }, { status: 500 });
 }
 

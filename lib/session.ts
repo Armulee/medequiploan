@@ -1,5 +1,6 @@
 import { getIronSession, type IronSession, type SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
+import { ConfigError } from './api';
 
 export type SessionUser = {
   user_id: string;
@@ -16,9 +17,9 @@ export type SessionData = { user?: SessionUser };
 function sessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 32) {
-    throw new Error(
+    throw new ConfigError(
       'ไม่พบ SESSION_SECRET หรือสั้นเกินไป (ต้องยาวอย่างน้อย 32 ตัวอักษร) ' +
-        'สุ่มด้วย: openssl rand -base64 48'
+        'ตั้งใน Vercel Project Settings · สุ่มด้วย: openssl rand -base64 48'
     );
   }
   return secret;

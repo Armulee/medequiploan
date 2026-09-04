@@ -3,6 +3,7 @@ import { drizzle as drizzleNeon, type NeonHttpDatabase } from 'drizzle-orm/neon-
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
+import { ConfigError } from '../api';
 
 // Vercel's Neon/Postgres integrations inject the connection string under
 // different names depending on which one the store was created from, so accept
@@ -19,7 +20,7 @@ const url =
   process.env.POSTGRES_URL_NON_POOLING;
 
 if (!url) {
-  throw new Error(
+  throw new ConfigError(
     'ไม่พบ connection string ของฐานข้อมูล — ตั้ง DATABASE_URL ใน .env.local (dev) ' +
       'หรือเชื่อม Neon store เข้ากับ project ใน Vercel (production)'
   );
