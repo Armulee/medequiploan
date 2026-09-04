@@ -122,8 +122,10 @@ export default function LandingPage() {
             </h1>
             <p className="lead">
               วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน และอุปกรณ์อื่น ๆ
-              สำหรับผู้ป่วยและผู้ดูแล ส่งคำขอออนไลน์ได้ทันที ไม่ต้องสมัครสมาชิก
-              เจ้าหน้าที่ตรวจสอบและติดต่อกลับภายในไม่กี่วัน
+              สำหรับผู้ป่วยและผู้ดูแล ส่งคำขอออนไลน์ได้ทันที ไม่ต้องสมัครสมาชิก{' '}
+              {/* Hidden on a phone, not removed — it still reaches crawlers,
+                  and the same sentence is the page's meta description. */}
+              <span className="lead-tail">เจ้าหน้าที่ตรวจสอบและติดต่อกลับภายในไม่กี่วัน</span>
             </p>
             <div className="hero-cta">
               <Link href="/request" className="btn btn-primary btn-lg">
