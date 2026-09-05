@@ -132,6 +132,10 @@ npm install
 npm run check-env         # ตรวจว่า env ครบก่อน deploy
 npm run db:generate       # สร้าง migration จาก schema
 npm run db:migrate        # รัน migration ที่ยังไม่ได้รัน (มี ledger กันรันซ้ำ)
+# **เพิ่ม migration ใหม่ = ต้องอัปเดต `sql/setup.sql` ด้วย** (ไฟล์รวมไฟล์เดียวสำหรับ
+# SQL editor ที่คนตั้งระบบใหม่ใช้) ทั้งตัว schema และรายชื่อใน INSERT INTO _migrations
+# ไม่งั้นฐานข้อมูลที่ตั้งด้วยไฟล์นั้นจะไม่ตรงกับโค้ด · วิธีตรวจ: สร้างสองฐาน
+# ฐานหนึ่งรัน migrate อีกฐานรัน setup.sql แล้ว diff information_schema.columns กัน
 npm run seed              # สร้างผู้ใช้ + อุปกรณ์ตัวอย่าง (ต้องตั้ง SEED_*_PASSWORD ก่อน)
 npm run dev               # http://localhost:3000
 npm run build             # production build

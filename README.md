@@ -35,6 +35,8 @@ npm run dev                  # http://localhost:3000
 ## Deploy ขึ้นใช้งานจริง
 
 ดู [`DEPLOY.md`](DEPLOY.md) — Vercel + Neon (Singapore) + Vercel Blob
+· ตั้งฐานข้อมูลแบบไม่ต้องลงอะไรเลย: เอา [`sql/setup.sql`](sql/setup.sql) วางใน Neon SQL Editor ไฟล์เดียวจบ
+· ส่งต่อโปรเจกต์ให้คนอื่นดูแล: [`HANDOVER.md`](HANDOVER.md)
 
 ## โครงสร้างโปรเจกต์
 
