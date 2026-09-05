@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, isNull, lt, ne, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers, equipment, records } from '@/lib/db/schema';
-import { ApiError, json, pageParams, requireAuth, route } from '@/lib/api';
+import { ApiError, json, requiredPage, requireAuth, route } from '@/lib/api';
 import { displayStatus, issueBorrow } from '@/lib/borrow';
 import { recordView } from '@/lib/views';
 
@@ -39,7 +39,7 @@ export const GET = route(async (req: Request) => {
   }
   const where = filters.length ? and(...filters) : undefined;
 
-  const page = pageParams(sp);
+  const page = requiredPage(sp);
   const query = db
     .select({
       record: records,
@@ -56,7 +56,7 @@ export const GET = route(async (req: Request) => {
     .orderBy(desc(records.borrowDate), desc(records.recordId))
     .$dynamic();
 
-  const rows = await (page ? query.limit(page.limit).offset(page.offset) : query);
+  const rows = await query.limit(page.limit).offset(page.offset);
 
   const list = rows.map((r) =>
     recordView(
@@ -69,16 +69,9 @@ export const GET = route(async (req: Request) => {
 
   // Counted with the same filter but no join: the list shows "N of M" and M
   // has to be the whole matching set, not the page.
-  const total = page
-    ? Number(
-        (
-          await db
-            .select({ n: sql<number>`count(*)::int` })
-            .from(records)
-            .where(where)
-        )[0]?.n ?? 0
-      )
-    : list.length;
+  const total = Number(
+    (await db.select({ n: sql<number>`count(*)::int` }).from(records).where(where))[0]?.n ?? 0
+  );
 
   return json({ records: list, total });
 });

@@ -22,6 +22,20 @@ export type Page = { limit: number; offset: number };
  * dashboard all read these endpoints and want everything. Only the staff
  * lists page, and they always send a limit.
  */
+/**
+ * The same, but a page is always returned — a caller that sends no limit gets
+ * the default one instead of the whole table.
+ *
+ * For lists of people this is the difference between "the UI forgot a
+ * parameter" and "one compromised staff account exports every borrower,
+ * every loan and every ID-card URL in a single request". The endpoints that
+ * genuinely need everything (the equipment catalogue behind the selects and
+ * the public landing page) keep using pageParams.
+ */
+export function requiredPage(sp: URLSearchParams, max = 100, fallback = 50): Page {
+  return pageParams(sp, max) ?? { limit: fallback, offset: 0 };
+}
+
 export function pageParams(sp: URLSearchParams, max = 100): Page | null {
   const raw = sp.get('limit');
   if (raw === null) return null;

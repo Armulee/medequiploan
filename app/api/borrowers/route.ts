@@ -1,7 +1,7 @@
 import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers } from '@/lib/db/schema';
-import { ApiError, json, pageParams, requireAuth, route } from '@/lib/api';
+import { ApiError, json, requiredPage, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
@@ -24,21 +24,20 @@ export const GET = route(async (req: Request) => {
       )
     : undefined;
 
-  const page = pageParams(sp);
-  const query = db
+  // Always a page, even when the caller forgets to ask for one: this is the
+  // list of every person the foundation holds an ID photograph of.
+  const page = requiredPage(sp);
+  const rows = await db
     .select()
     .from(borrowers)
     .where(where)
     .orderBy(desc(borrowers.registeredAt), desc(borrowers.borrowerId))
-    .$dynamic();
+    .limit(page.limit)
+    .offset(page.offset);
 
-  const rows = await (page ? query.limit(page.limit).offset(page.offset) : query);
-
-  const total = page
-    ? Number(
-        (await db.select({ n: sql<number>`count(*)::int` }).from(borrowers).where(where))[0]?.n ?? 0
-      )
-    : rows.length;
+  const total = Number(
+    (await db.select({ n: sql<number>`count(*)::int` }).from(borrowers).where(where))[0]?.n ?? 0
+  );
 
   return json({ borrowers: rows.map(borrowerListView), total });
 });

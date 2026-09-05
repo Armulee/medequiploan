@@ -1,7 +1,7 @@
 import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers, equipment, requests } from '@/lib/db/schema';
-import { ApiError, json, pageParams, requireAuth, route } from '@/lib/api';
+import { ApiError, json, requiredPage, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
@@ -167,7 +167,7 @@ export const GET = route(async (req: Request) => {
   // twenty matching requests and the count beside them is the whole queue.
   const where = status ? eq(requests.status, status) : undefined;
 
-  const page = pageParams(sp);
+  const page = requiredPage(sp);
   const query = db
     .select({
       request: requests,
@@ -184,7 +184,7 @@ export const GET = route(async (req: Request) => {
     .orderBy(desc(requests.requestedAt), desc(requests.requestId))
     .$dynamic();
 
-  const rows = await (page ? query.limit(page.limit).offset(page.offset) : query);
+  const rows = await query.limit(page.limit).offset(page.offset);
 
   const list = rows.map((r) => ({
     request_id: r.request.requestId,
@@ -201,11 +201,9 @@ export const GET = route(async (req: Request) => {
     equipment_name: r.equipmentName ?? r.request.equipmentId,
   }));
 
-  const total = page
-    ? Number(
-        (await db.select({ n: sql<number>`count(*)::int` }).from(requests).where(where))[0]?.n ?? 0
-      )
-    : list.length;
+  const total = Number(
+    (await db.select({ n: sql<number>`count(*)::int` }).from(requests).where(where))[0]?.n ?? 0
+  );
 
   return json({ requests: list, total });
 });

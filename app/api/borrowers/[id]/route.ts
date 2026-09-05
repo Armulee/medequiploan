@@ -2,15 +2,21 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers, records } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
+import { logRead } from '@/lib/audit';
 import { borrowerFullView } from '@/lib/views';
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export const GET = route<Ctx>(async (_req, { params }) => {
-  await requireAuth();
+  const actor = await requireAuth();
   const { id } = await params;
   const [found] = await db.select().from(borrowers).where(eq(borrowers.borrowerId, id));
   if (!found) throw new ApiError('ไม่พบข้อมูลผู้ยืม', 404);
+
+  // This response carries the decrypted national ID, the address and a link
+  // to the ID photograph. Reading it is the thing worth being able to review
+  // afterwards, so it is logged like a change.
+  logRead({ actor, targetType: 'borrower', targetId: id });
 
   // The on-time rate is counted in SQL over every loan this person has closed,
   // not over the rows the page happens to have scrolled to. Only loans that

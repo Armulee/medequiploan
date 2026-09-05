@@ -16,7 +16,11 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  other: { 'build-commit': BUILD },
+  // The commit hash used to be published here to settle "is the deploy
+  // actually current?". It also tells anyone looking exactly which version of
+  // a public repository is running, which is the first step of finding a
+  // known bug in it. Kept in development only.
+  ...(process.env.NODE_ENV === 'production' ? {} : { other: { 'build-commit': BUILD } }),
   referrer: 'strict-origin-when-cross-origin',
   // Only the two that cause trouble: iOS turns addresses into Maps links and
   // mangles them. Phone numbers are left alone — the staff queue wants them tappable.
