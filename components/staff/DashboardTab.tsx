@@ -68,13 +68,13 @@ export default function DashboardTab() {
         {/* Each tile opens the list it counts, already filtered — the number
             on its own only ever prompts the question "which ones?" */}
         <div className="stat-row">
-          <StatTile label="กำลังยืมอยู่" value={s.active_loans} unit="รายการ" href="/staff/borrow" />
+          <StatTile label="กำลังยืมอยู่" value={s.active_loans} unit="รายการ" href="/staff/returns" />
           <StatTile
             label="เกินกำหนดคืน"
             value={s.overdue_loans}
             unit="รายการ"
             tone={s.overdue_loans > 0 ? 'danger' : undefined}
-            href="/staff/borrow?filter=overdue"
+            href="/staff/returns?filter=overdue"
           />
           <StatTile
             label="คำขอรออนุมัติ"

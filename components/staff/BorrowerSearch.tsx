@@ -12,9 +12,12 @@ const RECENT_LIMIT = 25;
 export default function BorrowerSearch({
   onPick,
   placeholder = 'ค้นหาด้วยชื่อ เบอร์โทร หรือเลขบัตรประชาชน',
+  pickLabel = 'เลือก',
 }: {
   onPick: (b: BorrowerListItem) => void;
   placeholder?: string;
+  /** What clicking a row will do — "เลือก" when picking, "จ่ายอุปกรณ์" when lending. */
+  pickLabel?: string;
 }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<BorrowerListItem[] | null>(null);
@@ -94,7 +97,7 @@ export default function BorrowerSearch({
                   {!b.verified && ' · มาจากฟอร์มออนไลน์'}
                 </div>
               </div>
-              <span className="badge badge-active">เลือก</span>
+              <span className="badge badge-active">{pickLabel}</span>
             </button>
           ))}
         </div>

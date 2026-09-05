@@ -176,6 +176,10 @@ button:active { transform: scale(0.97); }
 .btn-outline:hover { background: var(--orange-bg); }
 .btn-danger { background: var(--red-bg); color: var(--red); }
 .btn-danger:hover { filter: brightness(0.97); }
+/* A label that is an icon plus text: .btn keeps the shape and padding, this
+   only lines the two up. Not folded into .btn itself because .list-row and
+   .stat-tile are buttons too, with layouts of their own. */
+.btn-with-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-block { width: 100%; }
 .btn-lg { padding: 16px 28px; font-size: 1.08rem; }
 .btn-sm { padding: 8px 14px; font-size: 0.85rem; }

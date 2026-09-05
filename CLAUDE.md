@@ -22,8 +22,8 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
 - **Frontend**: React ทั้งหมด — `app/page.tsx` (หน้าแรก), `app/request/` (ฟอร์มสาธารณะ),
   `app/staff/` (แอปเจ้าหน้าที่) · component อยู่ที่ `components/`
   · **ทุกเมนูของหน้าเจ้าหน้าที่เป็น route จริง** ไม่ใช่ tab state:
-  `/staff` (ภาพรวม) `/staff/register` `/staff/borrow` `/staff/requests` `/staff/stock`
-  `/staff/history` `/staff/users` `/staff/settings` และหน้ารายละเอียด
+  `/staff` (ภาพรวม) `/staff/lend` (บันทึกการยืม) `/staff/returns` (บันทึกการคืน)
+  `/staff/requests` `/staff/stock` `/staff/history` `/staff/users` `/staff/settings` และหน้ารายละเอียด
   `/staff/requests/[id]` `/staff/records/[id]` `/staff/borrowers/[id]` `/staff/users/[id]`
   `/staff/audit/[id]` · `app/staff/layout.tsx` ถือ `SessionProvider` + `<Toaster />` +
   ประตูล็อกอิน (`StaffFrame`) ให้ทั้งกลุ่ม แปลว่าเปลี่ยนหน้าไม่ต้องเช็ค session ใหม่
@@ -117,7 +117,14 @@ npm run build             # production build
 - **หน้ารายละเอียดใช้ `BackLink`** ซึ่งเป็นลิงก์ไปปลายทางจริง ไม่ใช่ `onBack` ที่ล้าง state
   (deep link ตรงเข้าหน้ารายละเอียดแล้วยังกดกลับได้ถูกที่)
 - **แท็บ/ตัวกรองที่ผู้ใช้จะกดกลับมาดูซ้ำ เก็บใน query string** เช่น `/staff/history?tab=audit`,
-  `/staff/borrow?filter=overdue`, `/staff/stock?low=1` — dashboard ลิงก์ตรงเข้าไปด้วย state นั้นเลย
+  `/staff/returns?filter=overdue`, `/staff/stock?low=1`, `/staff/lend?tab=new`
+  — dashboard ลิงก์ตรงเข้าไปด้วย state นั้นเลย
+- **จ่ายอุปกรณ์เริ่มจาก "คน" ไม่ใช่ฟอร์ม** — `/staff/lend` ให้เลือกผู้ยืมเดิมหรือลงทะเบียนรายใหม่
+  แล้วพาไปที่ `/staff/borrowers/[id]` ซึ่งมีปุ่มจ่ายอุปกรณ์ (`LendDialog`)
+  · `/staff/returns` มีแต่รายการที่ยังไม่คืน + ปุ่มรับคืน ไม่มีฟอร์มยืมแล้ว
+  · เจ้าหน้าที่ที่ยืนอยู่กับผู้ยืมจะได้ไม่ต้องพิมพ์ชื่อคนที่เพิ่งลงทะเบียนซ้ำอีกรอบ
+  · การยืมยังมีสองทางเหมือนเดิม: `source='direct'` (จ่ายหน้าเคาน์เตอร์) กับ `source='request'`
+  (อนุมัติคำขอออนไลน์) — ทั้งคู่เรียก `issueBorrow()` ตัวเดียวกัน
 - **การกระทำที่ย้อนกลับยาก** (ตัดสต็อก เพิ่มสต็อก ปิดบัญชี) ต้องมี **2 ขั้นตอน**
   ขั้นที่สองสรุปให้เห็นว่าตัวเลขจะเปลี่ยนจากเท่าไหร่เป็นเท่าไหร่
 - **แก้บัญชีตัวเอง** ใช้ `PATCH /api/auth/me` ซึ่งเอา id จาก session ไม่ใช่จาก request

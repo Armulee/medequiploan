@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ConsentNotice from '@/components/ConsentNotice';
@@ -23,12 +22,20 @@ const EMPTY = {
 
 type FieldError = 'national_id' | 'phone' | 'consent';
 
-export default function RegisterTab() {
+/**
+ * Registering someone is the first half of lending to them, so this is a form
+ * rather than a page: it hands the new borrower to whoever asked for it, and
+ * the lend page sends them straight on to that person's own page.
+ */
+export default function RegisterForm({
+  onRegistered,
+}: {
+  onRegistered: (borrower: BorrowerFull) => void;
+}) {
   const [form, setForm] = useState(EMPTY);
   // Validation stays next to the field it is about; only the outcome of the
   // save is raised as a toast.
   const [invalid, setInvalid] = useState<FieldError | null>(null);
-  const [done, setDone] = useState<BorrowerFull | null>(null);
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -57,12 +64,12 @@ export default function RegisterTab() {
       toast.success(
         `ลงทะเบียน ${res.borrower.first_name} ${res.borrower.last_name} แล้ว (รหัส ${res.borrower.borrower_id})`
       );
-      setDone(res.borrower);
       setForm(EMPTY);
       setPhoto(null);
       setPhotoNote('');
       setConsent(false);
       if (fileRef.current) fileRef.current.value = '';
+      onRegistered(res.borrower);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'ลงทะเบียนไม่สำเร็จ');
     } finally {
@@ -71,28 +78,10 @@ export default function RegisterTab() {
   }
 
   return (
-    <div className="card">
-      <h1>ลงทะเบียนผู้ยืม</h1>
-      <p style={{ color: 'var(--text-muted)', marginTop: -6 }}>
+    <>
+      <p className="hint" style={{ marginBottom: 12 }}>
         เลขบัตรประชาชนจะถูกเข้ารหัสก่อนบันทึก และแสดงแบบปิดบังในหน้ารายการ
       </p>
-
-      {/* Not a status banner: the toast already said it worked. This is the
-          next thing the staff member wants — the person's page, to lend to
-          them straight away. */}
-      {done && (
-        <div className="picked-box">
-          <div>
-            <div className="title">
-              ลงทะเบียนแล้ว: {done.first_name} {done.last_name}
-            </div>
-            <div className="sub">รหัส {done.borrower_id}</div>
-          </div>
-          <Link className="btn btn-sm btn-outline" href={`/staff/borrowers/${done.borrower_id}`}>
-            ดูข้อมูล
-          </Link>
-        </div>
-      )}
 
       <form onSubmit={onSubmit}>
         <div className="row">
@@ -207,9 +196,9 @@ export default function RegisterTab() {
         )}
 
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? 'กำลังบันทึก...' : 'บันทึกการลงทะเบียน'}
+          {busy ? 'กำลังบันทึก...' : 'ลงทะเบียน แล้วไปหน้าจ่ายอุปกรณ์'}
         </button>
       </form>
-    </div>
+    </>
   );
 }

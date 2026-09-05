@@ -7,28 +7,23 @@ import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDate } from '@/app/lib/format';
-import BorrowerSearch from './BorrowerSearch';
-import type { BorrowerListItem, Equipment, LoanRecord } from '@/app/lib/types';
+import type { LoanRecord } from '@/app/lib/types';
 
-export default function BorrowTab() {
+/**
+ * Receiving things back, and nothing else. Handing an item out used to share
+ * this page, which meant the borrower picker and the equipment select sat on
+ * top of the list of everything already out — two different jobs, one screen.
+ * Lending now starts from the person (/staff/lend), so this page is the queue
+ * of what is still on loan.
+ */
+export default function ReturnsTab() {
   // ?filter=overdue is what the dashboard's "เกินกำหนดคืน" tile links to.
   const initialFilter = useSearchParams().get('filter');
-  const [picked, setPicked] = useState<BorrowerListItem | null>(null);
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [equipmentId, setEquipmentId] = useState('');
-  const [dueDate, setDueDate] = useState('');
   const [active, setActive] = useState<LoanRecord[] | null>(null);
   const [onlyOverdue, setOnlyOverdue] = useState(initialFilter === 'overdue');
   const [returning, setReturning] = useState<LoanRecord | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  const loadEquipment = useCallback(() => {
-    api<{ equipment: Equipment[] }>('/api/equipment')
-      .then((d) => setEquipment(d.equipment))
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดรายการอุปกรณ์ไม่สำเร็จ'));
-  }, []);
-
-  const loadActive = useCallback(() => {
+  const load = useCallback(() => {
     api<{ records: LoanRecord[] }>('/api/records')
       .then((d) => setActive(d.records.filter((r) => r.status !== 'คืนแล้ว')))
       .catch((e) => {
@@ -37,97 +32,16 @@ export default function BorrowTab() {
       });
   }, []);
 
-  useEffect(() => {
-    loadEquipment();
-    loadActive();
-  }, [loadEquipment, loadActive]);
-
-  async function onBorrow(e: React.FormEvent) {
-    e.preventDefault();
-    if (!picked || !equipmentId) return;
-
-    setBusy(true);
-    try {
-      await apiJson('/api/records', 'POST', {
-        borrower_id: picked.borrower_id,
-        equipment_id: equipmentId,
-        due_date: dueDate || null,
-      });
-      toast.success(`บันทึกการยืมของ ${picked.first_name} ${picked.last_name} แล้ว`);
-      setPicked(null);
-      setEquipmentId('');
-      setDueDate('');
-      // Stock and the active list both changed, so refresh from the server
-      // rather than adjusting local copies that could drift.
-      loadEquipment();
-      loadActive();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'บันทึกการยืมไม่สำเร็จ');
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(load, [load]);
 
   const shown = (active ?? []).filter((r) => !onlyOverdue || r.status === 'เกินกำหนด');
+  const overdueCount = (active ?? []).filter((r) => r.status === 'เกินกำหนด').length;
 
   return (
     <>
       <div className="card">
-        <h1>บันทึกการยืม</h1>
-
-        {picked ? (
-          <div className="picked-box">
-            <div>
-              <div className="title">
-                {picked.first_name} {picked.last_name}
-              </div>
-              <div className="sub">
-                {picked.borrower_id} · {picked.national_id_masked}
-                {picked.phone ? ` · โทร ${picked.phone}` : ''}
-              </div>
-            </div>
-            <button className="btn btn-sm btn-outline" onClick={() => setPicked(null)}>
-              เปลี่ยน
-            </button>
-          </div>
-        ) : (
-          <BorrowerSearch onPick={setPicked} />
-        )}
-
-        <form onSubmit={onBorrow} style={{ marginTop: 14 }}>
-          <div className="field">
-            <label htmlFor="bw_equipment">อุปกรณ์ *</label>
-            <select
-              id="bw_equipment"
-              value={equipmentId}
-              onChange={(e) => setEquipmentId(e.target.value)}
-              required
-            >
-              <option value="">-- เลือกอุปกรณ์ --</option>
-              {equipment.map((e) => (
-                <option key={e.equipment_id} value={e.equipment_id} disabled={e.available_qty <= 0}>
-                  {e.name} (เหลือ {e.available_qty})
-                  {e.available_qty <= 0 ? ' — หมด' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="bw_due">กำหนดคืน</label>
-            <input id="bw_due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
-
-          <button type="submit" className="btn btn-primary btn-block" disabled={busy || !picked}>
-            {busy ? 'กำลังบันทึก...' : 'บันทึกการยืม'}
-          </button>
-          {!picked && <div className="hint">เลือกผู้ยืมจากรายการด้านบนก่อน</div>}
-        </form>
-      </div>
-
-      <div className="card">
         <div className="card-head">
-          <h2>รายการที่ยืมอยู่</h2>
+          <h1>บันทึกการคืน</h1>
           <div className="filter-row" style={{ margin: 0 }}>
             <button
               className={`btn btn-sm ${onlyOverdue ? 'btn-outline' : 'btn-primary'}`}
@@ -139,15 +53,21 @@ export default function BorrowTab() {
               className={`btn btn-sm ${onlyOverdue ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setOnlyOverdue(true)}
             >
-              เกินกำหนด
+              เกินกำหนด{overdueCount > 0 ? ` (${overdueCount})` : ''}
             </button>
           </div>
         </div>
+        <p style={{ color: 'var(--text-muted)', marginTop: -2 }}>
+          อุปกรณ์ที่ยังอยู่กับผู้ยืม · กด “รับคืน” เมื่อของกลับเข้าศูนย์
+          {' · '}
+          <Link href="/staff/lend">จ่ายอุปกรณ์ให้ผู้ยืม</Link>
+        </p>
+
         {active === null ? (
           <div className="empty-state">กำลังโหลด...</div>
         ) : shown.length === 0 ? (
           <div className="empty-state">
-            {onlyOverdue ? 'ไม่มีรายการเกินกำหนด' : 'ไม่มีรายการยืมอยู่ในขณะนี้'}
+            {onlyOverdue ? 'ไม่มีรายการเกินกำหนด' : 'ไม่มีอุปกรณ์ที่ยังไม่ได้คืน'}
           </div>
         ) : (
           <div className="list">
@@ -182,8 +102,7 @@ export default function BorrowTab() {
           onClose={() => setReturning(null)}
           onDone={() => {
             setReturning(null);
-            loadEquipment();
-            loadActive();
+            load();
           }}
         />
       )}

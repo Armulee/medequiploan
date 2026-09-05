@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
@@ -19,6 +19,8 @@ export default function BorrowerDetail({
   backLabel,
   actions,
   requestStatus,
+  refreshKey = 0,
+  onLoaded,
 }: {
   borrowerId: string;
   backHref: string;
@@ -26,14 +28,26 @@ export default function BorrowerDetail({
   actions?: React.ReactNode;
   /** Shown by the request queue, where the decision is what the reader came for. */
   requestStatus?: string;
+  /** Bumped by the parent after lending, so the loan list below reflects it. */
+  refreshKey?: number;
+  /** The parent needs the name for its own dialogs, and only this fetch has it. */
+  onLoaded?: (borrower: BorrowerFull) => void;
 }) {
   const [borrower, setBorrower] = useState<BorrowerFull | null>(null);
   const [records, setRecords] = useState<LoanRecord[] | null>(null);
   const [failed, setFailed] = useState(false);
 
+  // Held in a ref so an inline arrow from the parent does not re-run the fetch
+  // on every render.
+  const loaded = useRef(onLoaded);
+  loaded.current = onLoaded;
+
   useEffect(() => {
     api<{ borrower: BorrowerFull }>(`/api/borrowers/${borrowerId}`)
-      .then((d) => setBorrower(d.borrower))
+      .then((d) => {
+        setBorrower(d.borrower);
+        loaded.current?.(d.borrower);
+      })
       .catch((e) => {
         setFailed(true);
         toast.error(e instanceof Error ? e.message : 'โหลดข้อมูลผู้ยืมไม่สำเร็จ');
@@ -41,7 +55,7 @@ export default function BorrowerDetail({
     api<{ records: LoanRecord[] }>(`/api/records?borrower_id=${encodeURIComponent(borrowerId)}`)
       .then((d) => setRecords(d.records))
       .catch(() => setRecords([]));
-  }, [borrowerId]);
+  }, [borrowerId, refreshKey]);
 
   if (failed) {
     return (

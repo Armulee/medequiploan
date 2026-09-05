@@ -67,7 +67,7 @@ export default function RecordDetail({ recordId }: { recordId: string }) {
           <div>
             <dt>ผู้ยืม</dt>
             <dd>
-              <Link className="row-link" href={`/staff/borrowers/${record.borrower_id}`}>
+              <Link className="row-link" href={`/staff/borrowers/${record.borrower_id}?from=history`}>
                 {record.borrower_name}
               </Link>
             </dd>

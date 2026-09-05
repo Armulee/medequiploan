@@ -1,15 +1,15 @@
 'use client';
 
 import {
-  ArrowRightLeft,
   FileCheck,
   History,
   LayoutDashboard,
   LogOut,
   Menu,
+  PackageOpen,
   Settings,
   SlidersHorizontal,
-  UserPlus,
+  Undo2,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -42,9 +42,10 @@ type Tab = {
 // the API enforces the same restriction regardless of what is rendered.
 const TABS: Tab[] = [
   { href: '/staff', label: 'ภาพรวม', Icon: LayoutDashboard },
-  { href: '/staff/register', label: 'ลงทะเบียน', Icon: UserPlus },
-  { href: '/staff/borrow', label: 'ยืม-คืน', Icon: ArrowRightLeft },
-  { href: '/staff/requests', label: 'คำขอ', Icon: FileCheck, also: ['/staff/borrowers'] },
+  // Lending starts from the person, so the borrower pages belong to this tab.
+  { href: '/staff/lend', label: 'บันทึกการยืม', Icon: PackageOpen, also: ['/staff/borrowers'] },
+  { href: '/staff/returns', label: 'บันทึกการคืน', Icon: Undo2 },
+  { href: '/staff/requests', label: 'คำขอ', Icon: FileCheck },
   { href: '/staff/stock', label: 'สต็อก', Icon: SlidersHorizontal },
   {
     href: '/staff/history',
