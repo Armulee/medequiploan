@@ -96,7 +96,6 @@ export default function LandingPage() {
 
       <section className="hero">
         <HeroPhoto />
-        <div className="hero-scrim" />
         <div className="hero-inner">
           <div className="hero-copy">
             {/* "ฟรี" was a chip above the headline. In the headline it is

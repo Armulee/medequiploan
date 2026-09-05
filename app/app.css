@@ -442,19 +442,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   /* Biased down: the equipment sits below the middle of the landscape frame. */
   object-position: center 58%;
 }
-/* A wash of the page's own background, not a grey veil — it disappears into
-   the warm cream of the photograph while guaranteeing the text's contrast
-   wherever the crop lands. */
-.hero-scrim {
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    100deg,
-    rgba(255, 246, 240, 0.97) 0%,
-    rgba(255, 246, 240, 0.96) 56%,
-    rgba(255, 246, 240, 0.18) 71%,
-    rgba(255, 246, 240, 0) 81%
-  );
-}
 .hero-inner {
   position: relative;
   z-index: 1;
@@ -475,25 +462,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   .hero-inner { padding: 100px 20px 150px; }
   .hero-copy { max-width: none; position: relative; }
 
-  /* The wash follows the WORDS, not a percentage of the viewport. Tuned to
-     the viewport it fits one device and fails the next: Safari's toolbars
-     leave about 430x772, whose proportions are almost exactly the picture's,
-     so nothing stretches and the clear wall lands ~50px short of where a
-     percentage predicted. Anchored to .hero-copy it cannot land short —
-     it is the same shape as the text at any height. */
-  .hero-scrim { display: none; }
-  .hero-copy::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset: -160px -20px -72px;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 246, 240, 0.96) 0%,
-      rgba(255, 246, 240, 0.94) 72%,
-      rgba(255, 246, 240, 0) 100%
-    );
-  }
 }
 
 /* On a phone the portrait crop takes over. Its height is tied to the viewport
@@ -501,17 +469,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
    the picture, not a fixed number of pixels. */
 @media (max-width: 640px) {
   .hero-photo img { object-position: center bottom; }
-  /* Lighter here: the wall in the portrait crop is an even, bright cream and
-     body text clears about 10:1 against it unaided. Only the muted lead wants
-     help, and only where the wall runs out. */
-  .hero-copy::before {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 246, 240, 0.80) 0%,
-      rgba(255, 246, 240, 0.78) 74%,
-      rgba(255, 246, 240, 0) 100%
-    );
-  }
   .hero-inner { padding: 106px 20px 150px; }
   /* Tighter between the three blocks too — every pixel taken off the top of
      the copy is a pixel between the buttons and the crutches. */
@@ -520,10 +477,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   .lead-tail { display: none; }
 }
 
-/* The picture does not stop, it dissolves: a wash to the page's own
-   background with the blur ramping in behind it, so the hero hands over to
-   the page instead of ending on a hard edge. The gradient lives on ::before
-   because a mask on .hero-cue itself would fade its own words out too. */
+/* The scroll cue sits over the photograph with nothing behind it. There used
+   to be a blurred wash here to dissolve the hero into the page; it softened
+   the picture more than it helped, and the picture is the point. */
 .hero-cue {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -536,23 +492,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   color: var(--orange-deep);
   font-weight: 600;
   font-size: 0.95rem;
-}
-.hero-cue::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 246, 240, 0) 0%,
-    rgba(255, 246, 240, 0.55) 46%,
-    rgba(255, 246, 240, 0.92) 78%,
-    var(--orange-bg) 100%
-  );
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 62%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 62%);
 }
 .hero-cue:hover { text-decoration: none; color: var(--orange-dark); }
 .hero-cue svg { animation: cue-bob 2.2s var(--ease) infinite; }
@@ -691,7 +630,24 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 }
 .hero h1 .accent { color: var(--orange-dark); }
 .hero p.lead {
-  font-size: 1.08rem; color: var(--text-muted); max-width: 46ch; margin: 0 0 26px;
+  font-size: 1.08rem; max-width: 46ch; margin: 0 0 26px;
+  /* Darker than the muted grey used elsewhere. Muted works on a flat card;
+     over a photograph it was the one piece of hero text that stopped being
+     readable once the wash came off, measured at 1.7:1 against the brightest
+     part of the picture behind it. */
+  color: var(--text);
+}
+/* Legibility without touching the picture. A wash over the photograph reads
+   as a smear across the whole hero; a halo on the glyphs themselves is a few
+   pixels around the letters and leaves the image exactly as photographed.
+   The colour is the page's own cream, so on the bright parts of the picture
+   it is invisible and on the dark parts it does the work. */
+.hero h1,
+.hero p.lead,
+.hero-cue {
+  text-shadow:
+    0 0 6px rgba(255, 246, 240, 0.92),
+    0 0 18px rgba(255, 246, 240, 0.75);
 }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
 

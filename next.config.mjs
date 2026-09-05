@@ -17,6 +17,14 @@
 // weakening the header that actually ships.
 const dev = process.env.NODE_ENV !== 'production';
 
+// Vercel Analytics loads from the deployment's own origin in production
+// (/_vercel/insights/script.js), which 'self' already covers. Only the
+// development build reaches out to va.vercel-scripts.com for its debug script,
+// so that host is allowed in development and nowhere else — the shipped policy
+// keeps admitting no third-party script at all, which is the point of having
+// one on a site holding health data.
+const analytics = dev ? ' https://va.vercel-scripts.com' : '';
+
 // Cloudflare Turnstile, when it is configured. Only these exact directives —
 // the challenge loads a script and renders itself in an iframe — and only when
 // a site key exists, so a deployment without it keeps the tighter policy.
@@ -28,13 +36,13 @@ const csp = [
   "default-src 'self'",
   // Next's inline bootstrap and the landing page's JSON-LD need unsafe-inline.
   // unsafe-eval is development only — see above.
-  `script-src 'self' 'unsafe-inline'${turnstile}${dev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' 'unsafe-inline'${turnstile}${analytics}${dev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   // blob: is the local preview of a photo the person just picked.
   "img-src 'self' data: blob:",
   // The dev server's hot reload talks over a websocket to the same origin.
-  `connect-src 'self'${turnstile}${dev ? ' ws: wss:' : ''}`,
+  `connect-src 'self'${turnstile}${analytics}${dev ? ' ws: wss:' : ''}`,
   "form-action 'self'",
   "base-uri 'self'",
   "object-src 'none'",

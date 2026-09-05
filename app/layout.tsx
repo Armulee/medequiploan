@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { BUILD, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/lib/site';
 import './globals.css';
@@ -60,7 +61,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Page views and referrers, counted by Vercel. It sends no cookie and
+            no cross-site identifier, so it needs no consent banner — which is
+            the reason to use it here rather than something heavier on a site
+            whose visitors are patients and carers. Outside Vercel it is inert. */}
+        <Analytics />
+      </body>
     </html>
   );
 }
