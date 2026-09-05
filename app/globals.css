@@ -510,6 +510,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 
 /* ---------- Equipment carousel (Swiper, fade) ---------- */
 .stock-carousel { margin-top: 6px; }
+/* Two and three across: equal heights, and the row is what fades or slides,
+   not the individual picture. */
+.stock-carousel .swiper-wrapper { align-items: stretch; }
+.stock-carousel .swiper-slide { height: auto; display: flex; }
+.stock-carousel .swiper-slide > .stock-slide { flex-grow: 1; justify-content: center; }
 
 .stock-slide {
   margin: 0;
@@ -587,6 +592,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
    overflows, and on a phone the two names print on top of each other. */
 .stock-navlabel-prev { grid-column: 1; text-align: left; }
 .stock-navlabel-next { grid-column: 3; text-align: right; }
+
+/* Two and three across, a name that wraps to a second line drops its count
+   badge below the others. Reserving the second line keeps the row of badges
+   on one baseline. */
+@media (min-width: 700px) {
+  .stock-name { min-height: 2.7em; display: flex; align-items: center; }
+}
 
 @media (max-width: 700px) {
   .stock-shot { height: 190px; }

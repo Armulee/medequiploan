@@ -24,7 +24,30 @@ const PICTURES: Array<{ slug: string; match: RegExp }> = [
   { slug: 'oxygen-concentrator', match: /oxygen|ออกซิเจน/i },
 ];
 
-const pictureFor = (name: string) => PICTURES.find((p) => p.match.test(name))?.slug ?? null;
+// Swiper's fade stacks every slide and hides all but one, so it cannot show
+// two or three at a time — probed, not assumed: with slidesPerView 3 and
+// effect fade, one slide occupied the row. The effect is also not a
+// responsive parameter, so the tier is tracked here and the Swiper is
+// remounted (key) when it changes: fade on a phone, sliding above it.
+function useSlidesPerView() {
+  const [n, setN] = useState(1);
+  useEffect(() => {
+    const two = window.matchMedia('(min-width: 700px)');
+    const three = window.matchMedia('(min-width: 1024px)');
+    const read = () => setN(three.matches ? 3 : two.matches ? 2 : 1);
+    read();
+    two.addEventListener('change', read);
+    three.addEventListener('change', read);
+    return () => {
+      two.removeEventListener('change', read);
+      three.removeEventListener('change', read);
+    };
+  }, []);
+  return n;
+}
+
+const pictureFor = (name: string) =>
+  PICTURES.find((p) => p.match.test(name))?.slug ?? null;
 
 // The nav labels get one line and about a dozen characters on a phone, so
 // "วีลแชร์ (Wheelchair)" is trimmed to whichever half a Thai reader wants —
@@ -66,6 +89,8 @@ export default function StockCarousel() {
   const [error, setError] = useState('');
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
   const [index, setIndex] = useState(0);
+  const [snaps, setSnaps] = useState(1);
+  const perView = useSlidesPerView();
 
   useEffect(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
@@ -78,8 +103,24 @@ export default function StockCarousel() {
   if (items.length === 0) return <p style={{ color: 'var(--text-muted)' }}>ยังไม่มีข้อมูลอุปกรณ์</p>;
 
   const count = items.length;
-  const prev = items[(index - 1 + count) % count];
-  const next = items[(index + 1) % count];
+  const per = Math.min(perView, count);
+
+  // One dot per position the carousel can rest at. Looping shows one item at
+  // a time so that is simply the item count; grouped, it is Swiper's own snap
+  // grid, which already accounts for the last page overlapping the one before
+  // it when the items do not divide evenly.
+  const pages = per === 1 ? count : Math.max(1, Math.min(snaps, count));
+  const page = Math.min(index, pages - 1);
+  // Where a given page starts, clamped the way Swiper clamps the last one.
+  const startOf = (i: number) => Math.min(i * per, count - per);
+
+  // The names either side are the first item OUTSIDE the current view, not
+  // the first item of the adjacent page: with five items three-up there are
+  // only two pages, and both of those pages share an item, so naming the
+  // page's first item put the same already-visible name under both arrows.
+  const start = startOf(page);
+  const prev = items[(start - 1 + count) % count];
+  const next = items[(start + per) % count];
 
   // Swiper's own disableOnInteraction only covers dragging the slides. The
   // buttons below are ordinary React handlers, so they have to say so too.
@@ -91,11 +132,18 @@ export default function StockCarousel() {
   return (
     <div className="stock-carousel">
       <Swiper
-        modules={[Autoplay, EffectFade]}
-        effect="fade"
+        key={perView}
+        modules={per === 1 ? [Autoplay, EffectFade] : [Autoplay]}
+        effect={per === 1 ? 'fade' : 'slide'}
         fadeEffect={{ crossFade: true }}
         speed={550}
-        loop
+        slidesPerView={per}
+        slidesPerGroup={per}
+        spaceBetween={per === 1 ? 0 : 24}
+        // Looping needs one slide in view to stay predictable; grouped, rewind
+        // wraps at both ends without cloning anything.
+        loop={per === 1}
+        rewind={per > 1}
         // Long enough to actually read a name and a count before it moves.
         autoplay={
           typeof window !== 'undefined' &&
@@ -103,8 +151,13 @@ export default function StockCarousel() {
             ? false
             : { delay: 4200, disableOnInteraction: true }
         }
-        onSwiper={setSwiper}
-        onSlideChange={(s) => setIndex(s.realIndex)}
+        onSwiper={(s) => {
+          setSwiper(s);
+          setSnaps(s.snapGrid?.length ?? 1);
+          setIndex(per === 1 ? s.realIndex : s.snapIndex);
+        }}
+        onSlideChange={(s) => setIndex(per === 1 ? s.realIndex : s.snapIndex)}
+        onResize={(s) => setSnaps(s.snapGrid?.length ?? 1)}
         a11y={{ enabled: false }}
       >
         {items.map((e, i) => {
@@ -131,6 +184,7 @@ export default function StockCarousel() {
         })}
       </Swiper>
 
+      {pages > 1 && (
       <div className="stock-nav">
         <button
           type="button"
@@ -142,15 +196,17 @@ export default function StockCarousel() {
         </button>
 
         <div className="stock-dots" role="tablist" aria-label="เลือกอุปกรณ์">
-          {items.map((e, i) => (
+          {Array.from({ length: pages }, (_, i) => (
             <button
               type="button"
-              key={e.equipment_id}
+              key={i}
               role="tab"
-              aria-selected={i === index}
-              aria-label={e.name}
-              className={i === index ? 'stock-dot is-on' : 'stock-dot'}
-              onClick={steer(() => swiper?.slideToLoop(i))}
+              aria-selected={i === page}
+              aria-label={items[startOf(i)].name}
+              className={i === page ? 'stock-dot is-on' : 'stock-dot'}
+              onClick={steer(() =>
+                per === 1 ? swiper?.slideToLoop(i) : swiper?.slideTo(startOf(i))
+              )}
             />
           ))}
         </div>
@@ -171,6 +227,7 @@ export default function StockCarousel() {
           {shortName(next.name)}
         </span>
       </div>
+      )}
     </div>
   );
 }

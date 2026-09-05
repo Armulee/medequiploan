@@ -103,9 +103,9 @@ export default function LandingPage() {
                 both louder and one line shorter — and on a phone that line
                 was what pushed the buttons onto the wheelchair. */}
             <h1>
-              ยืมกายอุปกรณ์การแพทย์<span className="accent">ฟรี</span>
+              ยืมกายอุปกรณ์การแพทย์
               <br className="hero-break" />
-              ที่บ้านคุณ ได้ง่าย ๆ
+              ที่บ้านคุณ ได้ง่าย ๆ <span className="accent">ฟรี</span>
             </h1>
             <p className="lead">
               วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน และอุปกรณ์อื่น ๆ
