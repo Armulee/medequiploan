@@ -33,10 +33,16 @@ if (!key) {
   problems.push('ENCRYPTION_KEY ต้องเป็น base64 ของข้อมูล 32 ไบต์พอดี');
 }
 
-if (!process.env.BLOB_READ_WRITE_TOKEN) {
+// Two ways to be connected: the classic read-write token, or OIDC — where
+// Vercel injects BLOB_STORE_ID and hands the function a short-lived
+// VERCEL_OIDC_TOKEN at runtime. The OIDC token is NOT visible in the project's
+// Environment Variables list, so BLOB_STORE_ID on its own means "connected".
+if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
   console.warn(
-    '⚠️  ไม่พบ BLOB_READ_WRITE_TOKEN — รูปที่อัปโหลดจะถูกเก็บลงดิสก์ของเครื่องที่รัน ' +
-      'ซึ่งบน Vercel จะหายทุก cold start เชื่อม Blob store ก่อนใช้งานจริง\n' +
+    '⚠️  ยังไม่ได้เชื่อม Blob store — รูปที่อัปโหลดจะถูกเก็บลงดิสก์ของเครื่องที่รัน ' +
+      'ซึ่งบน Vercel จะหายทุก cold start\n' +
+      '   ต่อ Blob store ใน Vercel Dashboard (จะได้ BLOB_STORE_ID มาเอง) ' +
+      'หรือตั้ง BLOB_READ_WRITE_TOKEN\n' +
       '   รูปบัตรประชาชนบังคับแนบทุกคำขอ ถ้ารูปหายคำขอเก่าจะตรวจสอบย้อนหลังไม่ได้'
   );
 }

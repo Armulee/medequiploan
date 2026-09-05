@@ -47,11 +47,20 @@
 | ฐานข้อมูล | Storage → Create Database → **Neon** → เลือก region **Singapore** |
 | ที่เก็บรูป | Storage → Create → **Blob** |
 
-แล้วกด **Connect** ทั้งสองตัวเข้ากับ project — Vercel จะใส่ `DATABASE_URL` และ
-`BLOB_READ_WRITE_TOKEN` ให้อัตโนมัติ (redeploy หนึ่งครั้งให้ env ใหม่มีผล)
+แล้วกด **Connect** ทั้งสองตัวเข้ากับ project — Vercel จะใส่ env ให้อัตโนมัติ
+(redeploy หนึ่งครั้งให้ env ใหม่มีผล)
+
+> **ถ้าเชื่อม Blob แล้วเห็นแค่ `BLOB_STORE_ID` กับ `BLOB_WEBHOOK_PUBLIC_KEY`
+> ไม่มี `BLOB_READ_WRITE_TOKEN` — ถูกต้องแล้ว ไม่ต้องหาต่อ**
+> Vercel เปลี่ยนมาใช้ **OIDC** แทนการแจก token ถาวร: `BLOB_STORE_ID` บอกว่าเป็น store ไหน
+> ส่วนตัวยืนยันตัวตนคือ `VERCEL_OIDC_TOKEN` ที่ระบบสร้างให้ใหม่ทุกครั้งตอน runtime
+> **จึงไม่โผล่ในหน้า Environment Variables** · โค้ดรองรับทั้งสองแบบ
+> เห็น `BLOB_STORE_ID` = เชื่อมสำเร็จแล้ว
+> · `BLOB_WEBHOOK_PUBLIC_KEY` ไว้ตรวจ webhook ของ Blob ซึ่งโปรเจกต์นี้ไม่ได้ใช้ ปล่อยไว้ได้
 
 **Blob ไม่ใช่ของเสริม** — รูปบัตรประชาชนบังคับแนบทุกคำขอ ถ้ายังไม่ได้ connect Blob store
 โค้ดจะ fallback ไปเขียนลงดิสก์ของ instance ซึ่งบน Vercel หายทุก cold start
+· บน production การ fallback จะเขียน `[storage]` ลง log ให้เห็นด้วย ไม่ได้เงียบ ๆ
 แปลว่าคำขอที่ส่งเมื่อวานจะเปิดรูปบัตรไม่ได้ในวันนี้ · ตรวจว่าตั้งค่าครบด้วย `npm run check-env`
 
 **รูปบัตร/รูปอาการเก็บเป็น private blob** อ่านได้ด้วย token ของ store เท่านั้น

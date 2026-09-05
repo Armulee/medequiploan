@@ -19,8 +19,43 @@ const ALLOWED = new Map<string, string>([
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
-const useBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+/**
+ * Is a Blob store connected?
+ *
+ * Two ways, because Vercel now offers two. The classic one is a read-write
+ * token. The current one is OIDC: connecting a store injects `BLOB_STORE_ID`
+ * and the platform hands the function a short-lived `VERCEL_OIDC_TOKEN` at
+ * runtime — which never appears in the project's Environment Variables list,
+ * so a correctly connected store can look, from that screen, like a store with
+ * no credentials at all.
+ *
+ * Checking only for the token was therefore a silent data-loss bug: a properly
+ * connected store fell through to `localRoot`, and every ID-card photograph
+ * went to a container disk that Vercel throws away on the next cold start.
+ * Either signal now counts, and if the credential behind it turns out to be
+ * bad the SDK throws — which is far better than quietly succeeding into a
+ * directory that is about to evaporate.
+ */
+const useBlob = () =>
+  Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 const localRoot = path.join(process.cwd(), 'uploads');
+
+/**
+ * The disk fallback is a development convenience and nothing more. On a real
+ * deployment it means the photographs are being written somewhere that will
+ * not exist tomorrow, and the ID card attached to a loan is the evidence the
+ * whole approval process rests on — so say so, loudly, once per cold start,
+ * rather than letting it look like everything worked.
+ */
+let warnedAboutDisk = false;
+function warnDiskFallback(): void {
+  if (warnedAboutDisk || process.env.NODE_ENV !== 'production') return;
+  warnedAboutDisk = true;
+  console.error(
+    '[storage] ไม่พบ Blob store — กำลังเขียนรูปลงดิสก์ของ instance ซึ่งจะหายทุก cold start · ' +
+      'ต่อ Blob store ใน Vercel (จะได้ BLOB_STORE_ID) หรือตั้ง BLOB_READ_WRITE_TOKEN'
+  );
+}
 
 /**
  * `equipment` is the odd one out: catalogue photographs are not health data
@@ -77,7 +112,8 @@ export async function saveUpload(folder: Folder, file: File): Promise<string> {
       addRandomSuffix: false,
     });
   } else {
-    // Local dev fallback so the app runs without a Blob token.
+    // Local dev fallback so the app runs without a Blob store connected.
+    warnDiskFallback();
     const target = path.join(localRoot, id);
     await fs.mkdir(path.dirname(target), { recursive: true });
     await fs.writeFile(target, bytes);

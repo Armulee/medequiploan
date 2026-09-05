@@ -133,7 +133,7 @@ npm run build             # production build
 | `DATABASE_URL` | ✅ | Neon แบบ **pooled** (มี `-pooler` ใน host) · Vercel integration อาจฉีดมาเป็น `POSTGRES_URL` ซึ่งโค้ดรองรับแล้ว |
 | `SESSION_SECRET` | ✅ | `openssl rand -base64 48` · ไม่ตั้ง = แอปไม่ boot (ตั้งใจ) |
 | `ENCRYPTION_KEY` | ✅ | `openssl rand -base64 32` · **ทำหายคือเลขบัตรทุกคนอ่านไม่ออกถาวร** เก็บสำรองไว้ที่อื่นด้วย |
-| `BLOB_READ_WRITE_TOKEN` | production | ไม่ตั้ง = รูปเก็บลงดิสก์ ซึ่งบน Vercel หายทุก cold start |
+| `BLOB_STORE_ID` **หรือ** `BLOB_READ_WRITE_TOKEN` | production | Vercel รุ่นใหม่ให้ `BLOB_STORE_ID` + OIDC (ไม่มี token ให้ก๊อป ปกติ) · ไม่มีทั้งคู่ = รูปเก็บลงดิสก์ ซึ่งบน Vercel หายทุก cold start |
 | `SEED_ADMIN_PASSWORD` / `SEED_STAFF_PASSWORD` | ตอน seed | ไม่มีรหัสผ่านเริ่มต้นให้แล้ว |
 
 ## สิ่งที่ยังไม่ได้ทำ (โอกาสพัฒนาต่อ)
