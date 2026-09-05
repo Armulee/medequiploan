@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" />
+  <style>
+    /* Lifted from app/globals.css — same tokens, same values, so the canvas
+       cannot drift from what the site actually renders. */
+    :root {
+      --orange: #FF6C1D;
+      --orange-mid: #FF8A47;
+      --orange-dark: #E0560F;
+      --orange-deep: #B8420C;
+      --orange-light: #FFE7D6;
+      --orange-bg: #FFF6F0;
+      --text: #262019;
+      --text-muted: #766B60;
+      --border: #F0DDCB;
+      --green: #1E9E4C;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 2px 10px rgba(184, 66, 12, 0.07);
+      --shadow-md: 0 8px 24px rgba(184, 66, 12, 0.12);
+      --shadow-lg: 0 16px 44px rgba(184, 66, 12, 0.16);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--orange-bg);
+      color: var(--text);
+      font-family: 'Noto Sans Thai', 'Segoe UI', system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .dp {
+      font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+      font-weight: 600;
+      line-height: 1.3;
+      margin: 0 0 12px;
+      letter-spacing: 0.1px;
+    }
+    p { margin: 0; }
+    a { color: var(--orange-dark); text-decoration: none; }
+    a:hover { color: var(--orange-deep); text-decoration: underline; }
+  </style>
+</helmet>
+
+<div>
+  <div style="max-width: 1080px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+    <div style="display: flex; align-items: center; gap: 10px; font-family: 'Kanit', sans-serif; font-weight: 600; font-size: 18.4px; color: var(--text)">
+      <span style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); display: flex; align-items: center; justify-content: center; color: white; box-shadow: var(--shadow); flex-shrink: 0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" /></svg>
+      </span>
+      ศูนย์ยืม-คืนกายอุปกรณ์
+    </div>
+    <div style="display: flex; align-items: center; gap: 22px; color: var(--text-muted); font-weight: 600; font-size: 14.72px">
+      <span>วิธีใช้งาน</span><span>อุปกรณ์ที่มี</span><span>ติดตามคำขอ</span><span>เจ้าหน้าที่</span>
+    </div>
+  </div>
+
+  <div style="position: relative; overflow: hidden; background: radial-gradient(700px circle at 85% -10%, rgba(255,138,71,0.22), transparent 55%), radial-gradient(500px circle at 5% 90%, rgba(255,108,29,0.14), transparent 55%), var(--orange-bg)">
+    <div style="max-width: 1080px; margin: 0 auto; padding: 48px 24px 64px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center">
+      <div>
+      <span style="display: inline-flex; align-items: center; gap: 8px; background: var(--orange-light); color: var(--orange-deep); font-weight: 700; font-size: 13.12px; padding: 7px 14px; border-radius: 999px; margin-bottom: 18px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        ยืมฟรี ไม่มีค่าใช้จ่าย
+      </span>
+      <h1 style="font-size: 43.2px; margin-bottom: 16px; text-wrap: balance">ยืมกายอุปกรณ์การแพทย์<br /><span style="color: var(--orange-dark)">ที่บ้านคุณ</span> ได้ง่าย ๆ</h1>
+      <p style="font-size: 18.36px; color: var(--text-muted); max-width: 46ch; margin-bottom: 26px">วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน และอุปกรณ์อื่น ๆ สำหรับผู้ป่วยและผู้ดูแล ส่งคำขอออนไลน์ได้ทันที ไม่ต้องสมัครสมาชิก</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px">
+        <span style="background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); color: white; box-shadow: 0 4px 14px rgba(224, 86, 15, 0.28); font-size: 18.36px; font-weight: 600; padding: 16px 28px; border-radius: 999px">ส่งคำขอยืมอุปกรณ์</span>
+        <span style="background: white; color: var(--orange-dark); border: 1.5px solid var(--orange); font-size: 18.36px; font-weight: 600; padding: 16px 28px; border-radius: 999px">ดูวิธีใช้งาน</span>
+      </div>
+      <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.6px; color: var(--text-muted)">
+        <span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>ไม่มีค่าใช้จ่าย</span>
+        <span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>ใช้งานง่าย เหมาะกับทุกวัย</span>
+        <span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>ข้อมูลถูกเข้ารหัสปลอดภัย</span>
+      </div>
+      </div>
+
+      <!-- Same slot, same 20px radius and --shadow-lg as .hero-panel. The
+           photograph simply takes the card the stock list used to sit in. -->
+      <div style="border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid var(--border); position: relative">
+        <div style="height: 340px; background-image: url(./hero-tall.jpg); background-size: cover; background-position: center 62%"></div>
+        <div style="background: white; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14.72px">
+          <span style="display: flex; align-items: center; gap: 8px; font-weight: 600">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>
+            พร้อมให้ยืมตอนนี้
+          </span>
+          <span style="background: var(--orange-light); color: var(--orange-deep); font-weight: 700; font-size: 13.12px; padding: 4px 12px; border-radius: 999px">20 ชิ้น</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

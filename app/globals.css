@@ -1,0 +1,20 @@
+/**
+ * The hand-written stylesheet and Tailwind, kept out of each other's way.
+ *
+ * app.css goes into a cascade layer declared FIRST, so it has the lowest
+ * priority and Tailwind's utilities can override it inside shadcn components.
+ * Tailwind's preflight is deliberately not imported: it resets button, input
+ * and heading styling that .btn, .card and .badge depend on, and importing it
+ * would flatten every page in the app.
+ */
+@layer app, theme, components, utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
+@import './app.css' layer(app);
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+/* animate-in / fade-in-0 / slide-in-from-* — not built into Tailwind v4. */
+@import 'tw-animate-css';
+
+@source '../app';
+@source '../components';
