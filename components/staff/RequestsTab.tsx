@@ -53,6 +53,7 @@ export default function RequestsTab({
         <BorrowerDetail
           borrowerId={viewing.borrower_id}
           onBack={() => setViewing(null)}
+          requestStatus={viewing.status}
           actions={
             viewing.status === 'รอดำเนินการ' ? (
               <>

@@ -1,7 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { equipment } from '@/lib/db/schema';
-import { ApiError, json, requireRole, route } from '@/lib/api';
+import { ApiError, bodyOrForm, json, requireRole, route } from '@/lib/api';
+import { deleteUpload, saveUpload } from '@/lib/storage';
 import { logAction } from '@/lib/audit';
 import { equipmentView } from '@/lib/views';
 
@@ -17,7 +18,7 @@ export const GET = route<Ctx>(async (_req, { params }) => {
 export const PUT = route<Ctx>(async (req, { params }) => {
   const user = await requireRole('admin');
   const { id } = await params;
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const { fields: body, files } = await bodyOrForm(req);
 
   const [current] = await db.select().from(equipment).where(eq(equipment.equipmentId, id));
   if (!current) throw new ApiError('ไม่พบอุปกรณ์', 404);
@@ -49,6 +50,12 @@ export const PUT = route<Ctx>(async (req, { params }) => {
     patch.availableQty = qty - borrowed; // keep borrowed count intact
   }
 
+  if (files.image) {
+    patch.imageId = await saveUpload('equipment', files.image);
+  } else if (body.remove_image === 'true') {
+    patch.imageId = '';
+  }
+
   if (Object.keys(patch).length === 0) return json({ equipment: equipmentView(current) });
 
   const [updated] = await db
@@ -56,6 +63,12 @@ export const PUT = route<Ctx>(async (req, { params }) => {
     .set(patch)
     .where(eq(equipment.equipmentId, id))
     .returning();
+
+  // Only once the row no longer points at it, so a failed update cannot
+  // leave the equipment referencing a file that is already gone.
+  if (patch.imageId !== undefined && current.imageId && current.imageId !== patch.imageId) {
+    await deleteUpload(current.imageId);
+  }
 
   await logAction({
     actor: user,

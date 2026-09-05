@@ -27,6 +27,7 @@ export function apiJson<T>(path: string, method: string, body?: unknown): Promis
   });
 }
 
-export function apiForm<T>(path: string, form: FormData): Promise<T> {
-  return api<T>(path, { method: 'POST', body: form });
+export function apiForm<T>(path: string, form: FormData, method = 'POST'): Promise<T> {
+  // No Content-Type header: the browser has to set the multipart boundary.
+  return api<T>(path, { method, body: form });
 }

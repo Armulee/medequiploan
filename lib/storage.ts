@@ -21,7 +21,13 @@ export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const useBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 const localRoot = path.join(process.cwd(), 'uploads');
 
-export type Folder = 'id_cards' | 'illness_photos';
+/**
+ * `equipment` is the odd one out: catalogue photographs are not health data
+ * and are shown to the public on the landing page, so they are served by
+ * /api/equipment-photo without a session. The other two are health data and
+ * only ever leave through /api/files, which checks one.
+ */
+export type Folder = 'id_cards' | 'illness_photos' | 'equipment';
 
 /**
  * The extension comes from the sniffed MIME type, never from the uploaded
@@ -61,7 +67,7 @@ export async function readUpload(
   id: string
 ): Promise<{ body: ReadableStream | Buffer; contentType: string } | null> {
   // Reject traversal before the id ever reaches the filesystem or Blob.
-  if (!/^(id_cards|illness_photos)\/[A-Za-z0-9_]+\.(jpg|png|webp|heic|heif)$/.test(id)) {
+  if (!/^(id_cards|illness_photos|equipment)\/[A-Za-z0-9_]+\.(jpg|png|webp|heic|heif)$/.test(id)) {
     return null;
   }
 

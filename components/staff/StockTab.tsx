@@ -1,10 +1,12 @@
 'use client';
 
+import { ImagePlus, Pencil, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import Alert from '@/components/Alert';
 import Dialog, { DialogActions } from '@/components/Dialog';
-import { TriangleAlert } from 'lucide-react';
-import { api, apiJson } from '@/app/lib/api';
+import { api, apiForm, apiJson } from '@/app/lib/api';
+import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { Equipment } from '@/app/lib/types';
 
 const REMOVE_REASONS = ['ชำรุด', 'สูญหาย', 'ส่งซ่อม', 'รับกลับจากซ่อม'] as const;
@@ -17,16 +19,15 @@ export default function StockTab({
   initialLowOnly?: boolean;
 }) {
   const [items, setItems] = useState<Equipment[] | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [adjusting, setAdjusting] = useState<{ item: Equipment; mode: 'add' | 'remove' } | null>(null);
+  const [editing, setEditing] = useState<Equipment | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [lowOnly, setLowOnly] = useState(Boolean(initialLowOnly));
 
   const load = useCallback(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
       .then((d) => setItems(d.equipment))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดสต็อกไม่สำเร็จ'));
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดสต็อกไม่สำเร็จ'));
   }, []);
 
   useEffect(load, [load]);
@@ -44,9 +45,6 @@ export default function StockTab({
             </button>
           )}
         </div>
-
-        <Alert kind="error">{error}</Alert>
-        <Alert kind="success">{success}</Alert>
 
         <div className="filter-row">
           <button
@@ -66,11 +64,10 @@ export default function StockTab({
         {showAdd && isAdmin && (
           <AddEquipmentForm
             onDone={(msg) => {
-              setSuccess(msg);
+              toast.success(msg);
               setShowAdd(false);
               load();
             }}
-            onError={setError}
           />
         )}
 
@@ -100,7 +97,15 @@ export default function StockTab({
                   </div>
                 </div>
                 {isAdmin && (
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <button
+                      className="icon-btn"
+                      onClick={() => setEditing(e)}
+                      aria-label={`แก้ไข ${e.name}`}
+                      title="แก้ไขรายละเอียด"
+                    >
+                      <Pencil size={16} />
+                    </button>
                     <button
                       className="btn btn-sm btn-primary"
                       onClick={() => setAdjusting({ item: e, mode: 'add' })}
@@ -127,8 +132,20 @@ export default function StockTab({
           mode={adjusting.mode}
           onClose={() => setAdjusting(null)}
           onDone={(msg) => {
-            setSuccess(msg);
+            toast.success(msg);
             setAdjusting(null);
+            load();
+          }}
+        />
+      )}
+
+      {editing && (
+        <EditEquipmentDialog
+          item={editing}
+          onClose={() => setEditing(null)}
+          onDone={(msg) => {
+            toast.success(msg);
+            setEditing(null);
             load();
           }}
         />
@@ -137,35 +154,99 @@ export default function StockTab({
   );
 }
 
-function AddEquipmentForm({
-  onDone,
-  onError,
+/**
+ * The photo field, shared by the add form and the edit dialog. Resized in the
+ * browser before it is sent, like the illness photos: a phone camera file is
+ * several megabytes and this one ends up on the public landing page.
+ */
+function PhotoField({
+  id,
+  current,
+  file,
+  onPick,
+  onClear,
 }: {
-  onDone: (msg: string) => void;
-  onError: (msg: string) => void;
+  id: string;
+  current?: string;
+  file: File | null;
+  onPick: (f: File | null) => void;
+  onClear?: () => void;
 }) {
+  const [note, setNote] = useState('');
+  const preview = file ? URL.createObjectURL(file) : current || '';
+
+  return (
+    <div className="field">
+      <label htmlFor={id}>รูปอุปกรณ์</label>
+      <div className="photo-field">
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview} alt="" className="photo-field-preview" />
+        ) : (
+          <span className="photo-field-empty">
+            <ImagePlus size={26} />
+          </span>
+        )}
+        <div style={{ flexGrow: 1, minWidth: 0 }}>
+          <input
+            id={id}
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const picked = e.target.files?.[0];
+              if (!picked) {
+                onPick(null);
+                setNote('');
+                return;
+              }
+              setNote('กำลังย่อรูป...');
+              const resized = await resizeImage(picked);
+              onPick(resized);
+              setNote(
+                resized.size < picked.size
+                  ? `ย่อรูปแล้ว ${formatBytes(picked.size)} → ${formatBytes(resized.size)}`
+                  : `ขนาดไฟล์ ${formatBytes(resized.size)}`
+              );
+            }}
+          />
+          {note && <div className="hint">{note}</div>}
+          {onClear && current && !file && (
+            <button type="button" className="btn btn-sm btn-outline" onClick={onClear} style={{ marginTop: 8 }}>
+              ลบรูปนี้
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddEquipmentForm({ onDone }: { onDone: (msg: string) => void }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [qty, setQty] = useState('');
   const [threshold, setThreshold] = useState('2');
+  const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      await apiJson('/api/equipment', 'POST', {
-        name,
-        category,
-        total_qty: qty,
-        low_stock_threshold: threshold,
-      });
+      const form = new FormData();
+      form.append('name', name);
+      form.append('category', category);
+      form.append('total_qty', qty);
+      form.append('low_stock_threshold', threshold);
+      if (photo) form.append('image', photo);
+      await apiForm('/api/equipment', form);
       onDone(`เพิ่ม "${name}" เข้าสต็อกแล้ว`);
       setName('');
       setCategory('');
       setQty('');
+      setPhoto(null);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'เพิ่มอุปกรณ์ไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'เพิ่มอุปกรณ์ไม่สำเร็จ');
     } finally {
       setBusy(false);
     }
@@ -193,6 +274,7 @@ function AddEquipmentForm({
           <input id="eq_thr" type="text" inputMode="numeric" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
         </div>
       </div>
+      <PhotoField id="eq_photo" file={photo} onPick={setPhoto} />
       <button type="submit" className="btn btn-primary" disabled={busy}>
         {busy ? 'กำลังบันทึก...' : 'บันทึกอุปกรณ์'}
       </button>
@@ -248,7 +330,7 @@ function AdjustDialog({
           : `${effectiveReason} ${amount} ชิ้น: ${item.name}`
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ');
       setConfirming(false);
       setBusy(false);
     }
@@ -260,7 +342,6 @@ function AdjustDialog({
         title={mode === 'add' ? 'ยืนยันการเพิ่มสต็อก' : 'ยืนยันการตัดสต็อก'}
         onClose={() => (busy ? undefined : setConfirming(false))}
       >
-        <Alert kind="error">{error}</Alert>
         <div className="confirm-summary">
           {mode === 'add' ? 'ต้องการเพิ่ม' : `ต้องการตัดสต็อก (${effectiveReason})`}
           <br />
@@ -356,6 +437,95 @@ function AdjustDialog({
         </div>
 
         <DialogActions confirmLabel="ถัดไป" onCancel={onClose} danger={mode === 'remove'} />
+      </form>
+    </Dialog>
+  );
+}
+
+/**
+ * Everything about an item except its quantity, which has its own two-step
+ * dialog because it moves real stock. Renaming a wheelchair or replacing its
+ * photograph does not, so one step is enough.
+ */
+function EditEquipmentDialog({
+  item,
+  onClose,
+  onDone,
+}: {
+  item: Equipment;
+  onClose: () => void;
+  onDone: (msg: string) => void;
+}) {
+  const [name, setName] = useState(item.name);
+  const [category, setCategory] = useState(item.category);
+  const [threshold, setThreshold] = useState(String(item.low_stock_threshold));
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('ชื่ออุปกรณ์ว่างไม่ได้');
+      return;
+    }
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.append('name', name.trim());
+      form.append('category', category.trim());
+      form.append('low_stock_threshold', threshold);
+      if (photo) form.append('image', photo);
+      else if (removePhoto) form.append('remove_image', 'true');
+      await apiForm(`/api/equipment/${item.equipment_id}`, form, 'PUT');
+      onDone(`บันทึก "${name.trim()}" แล้ว`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog title="แก้ไขรายละเอียดอุปกรณ์" subtitle={item.equipment_id} onClose={onClose}>
+      <form onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="ed_name">ชื่ออุปกรณ์ *</label>
+          <input id="ed_name" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div className="row">
+          <div className="field">
+            <label htmlFor="ed_cat">หมวดหมู่</label>
+            <input id="ed_cat" value={category} onChange={(e) => setCategory(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="ed_thr">แจ้งเตือนเมื่อเหลือ ≤</label>
+            <input
+              id="ed_thr"
+              inputMode="numeric"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <PhotoField
+          id="ed_photo"
+          current={removePhoto ? '' : item.image}
+          file={photo}
+          onPick={(f) => {
+            setPhoto(f);
+            setRemovePhoto(false);
+          }}
+          onClear={() => setRemovePhoto(true)}
+        />
+
+        {/* Quantities are not here on purpose: they belong to the add and
+            subtract dialogs, which log a reason and a stock adjustment. */}
+        <div className="hint" style={{ marginBottom: 12 }}>
+          จำนวนแก้ที่ปุ่ม “+ เพิ่ม” และ “− ตัดสต็อก” เพราะต้องบันทึกเหตุผลไว้ในประวัติ
+        </div>
+
+        <DialogActions confirmLabel="บันทึก" onCancel={onClose} busy={busy} />
       </form>
     </Dialog>
   );

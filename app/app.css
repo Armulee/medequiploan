@@ -733,13 +733,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .chart-tick { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
 .chart-value { fill: var(--text); font-size: 12px; font-weight: 600; font-family: inherit; }
 
-.modal-backdrop {
-  position: fixed; inset: 0; z-index: 50;
-  background: rgba(38, 32, 25, 0.45);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-}
-.modal { max-width: 460px; width: 100%; margin: 0; max-height: 90vh; overflow-y: auto; }
-
 button.list-row {
   width: 100%; text-align: left; font: inherit; color: inherit;
   background: none; cursor: pointer;
@@ -910,3 +903,26 @@ button.back-link { cursor: pointer; }
 
 /* The one line on a tracking result the reader is actually looking for. */
 .track-highlight { color: var(--text); font-weight: 600; margin-top: 2px; }
+
+/* A pencil beside the stock buttons: small, quiet, and still a real target. */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; padding: 0;
+  border: 1.5px solid var(--border); border-radius: 50%;
+  background: var(--white); color: var(--text-muted);
+  box-shadow: none;
+}
+.icon-btn:hover { background: var(--orange-bg); color: var(--orange-dark); border-color: var(--orange-mid); }
+
+.photo-field { display: flex; align-items: flex-start; gap: 12px; }
+.photo-field-preview {
+  width: 72px; height: 72px; flex-shrink: 0; object-fit: contain;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--orange-bg);
+}
+.photo-field-empty {
+  width: 72px; height: 72px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+  background: var(--orange-bg); color: var(--text-muted);
+}

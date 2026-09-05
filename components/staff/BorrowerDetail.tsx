@@ -16,10 +16,13 @@ export default function BorrowerDetail({
   borrowerId,
   onBack,
   actions,
+  requestStatus,
 }: {
   borrowerId: string;
   onBack: () => void;
   actions?: React.ReactNode;
+  /** Shown by the request queue, where the decision is what the reader came for. */
+  requestStatus?: string;
 }) {
   const [borrower, setBorrower] = useState<BorrowerFull | null>(null);
   const [records, setRecords] = useState<LoanRecord[] | null>(null);
@@ -69,9 +72,19 @@ export default function BorrowerDetail({
           <h1>
             {borrower.first_name} {borrower.last_name}
           </h1>
-          <span className={borrower.verified ? 'badge badge-approved' : 'badge badge-pending'}>
-            {borrower.verified ? 'ยืนยันตัวตนแล้ว' : 'ยังไม่ยืนยันตัวตน'}
-          </span>
+          {/* Opened from the request queue this shows the decision. Opened
+              from anywhere else there is no request, so it falls back to
+              whether staff have seen the ID card — which is what `verified`
+              has always meant. It used to read "ยังไม่ยืนยันตัวตน", as though
+              the borrower had failed to do something; nothing on this site
+              asks them to verify anything. */}
+          {requestStatus ? (
+            <span className={statusBadgeClass(requestStatus)}>{requestStatus}</span>
+          ) : (
+            <span className={borrower.verified ? 'badge badge-approved' : 'badge badge-pending'}>
+              {borrower.verified ? 'เจ้าหน้าที่ตรวจบัตรแล้ว' : 'ยังไม่ได้ตรวจบัตร'}
+            </span>
+          )}
         </div>
 
         <dl className="detail-grid">

@@ -21,8 +21,12 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   - `lib/session.ts` — iron-session · `lib/storage.ts` — Vercel Blob (fallback ลงดิสก์ตอน dev)
 - **Frontend**: React ทั้งหมด — `app/page.tsx` (หน้าแรก), `app/request/` (ฟอร์มสาธารณะ),
   `app/staff/` (แอปเจ้าหน้าที่ tab-based) · component อยู่ที่ `components/`
-- **ธีม**: สีส้ม `#FF6C1D` ตาม CSS variables ที่ `:root` ใน `app/globals.css`
-  ฟอนต์ Kanit (หัวข้อ) + Noto Sans Thai (เนื้อหา) ไอคอนใช้ `components/Icon.tsx` (inline SVG)
+- **ธีม**: สีส้ม `#FF6C1D` ตาม CSS variables ที่ `:root` ใน `app/app.css`
+  ฟอนต์ Kanit (หัวข้อ) + Noto Sans Thai (เนื้อหา)
+- **UI kit**: ใช้ **shadcn/ui** ได้ (`components/ui/`) — dialog, sheet, toaster มีแล้ว
+  เพิ่มตัวใหม่ให้ก๊อป source มาไว้ใน `components/ui/` แล้วเปลี่ยนสีให้ใช้ CSS variables ของโปรเจกต์
+  · **ไอคอนใช้ `lucide-react` เท่านั้น** ห้ามวาด SVG เอง
+  ยกเว้น `components/Logo.tsx` ซึ่งเป็นโลโก้หัวใจตัวเดียวที่เหลือ (favicon generate จาก path นี้)
 
 ## กติกาเมื่อแก้ไข/เพิ่มฟีเจอร์
 
@@ -32,8 +36,11 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   · เฉพาะ admin: จัดการเจ้าหน้าที่ (`/api/users`), audit log, จัดการสต็อก
   · การซ่อนแท็บใน UI ไม่ใช่การป้องกัน — API ต้องเช็คเองเสมอ
 - **Audit**: ทุกการกระทำที่มีผลต่อข้อมูลต้องเรียก `logAction()`
-- **รูปภาพ**: เป็นข้อมูลสุขภาพ เสิร์ฟผ่าน `/api/files/[...id]` ที่เช็ค session เท่านั้น
+- **รูปภาพ**: รูปบัตร/รูปอาการเป็นข้อมูลสุขภาพ เสิร์ฟผ่าน `/api/files/[...id]` ที่เช็ค session เท่านั้น
   ห้ามส่ง URL ของ storage ตรง ๆ ให้ client · นามสกุลไฟล์ต้องมาจาก MIME type ไม่ใช่ชื่อไฟล์ที่อัปโหลด
+  · **ข้อยกเว้นเดียว**: รูปแคตตาล็อกอุปกรณ์ (folder `equipment`) ไม่ใช่ข้อมูลสุขภาพ
+  ขึ้นบนหน้าแรกสาธารณะ เสิร์ฟผ่าน `/api/equipment-photo/[...id]` ซึ่ง**ไม่เช็ค session**
+  แต่ล็อก prefix ไว้ที่ `equipment/` เท่านั้น เดินเข้าโฟลเดอร์ข้อมูลสุขภาพไม่ได้
 - **ความถูกต้องของสต็อก**: การเปลี่ยนจำนวนที่ต้อง atomic ให้เขียนเป็น **statement เดียว**
   (data-modifying CTE + guard ใน WHERE) อย่าอ่านมาเช็คแล้วค่อยเขียน — Neon HTTP driver
   ไม่มี interactive transaction และการแยกอ่าน/เขียนเปิดช่องให้ race
@@ -45,6 +52,12 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
 - **Rate limit**: endpoint ที่เปิดสาธารณะหรือรับรหัสผ่าน ต้องผ่าน `hit()` จาก `lib/rate-limit.ts`
   · เก็บ counter ใน Postgres ไม่ใช่ memory (serverless แต่ละ instance ไม่แชร์กัน)
   · limiter ออกแบบให้ **fail open** — ถ้ามันพัง ต้องไม่ล็อกเจ้าหน้าที่ออกจากระบบทั้งองค์กร
+- **Tailwind ห้ามเปิด preflight**: `app/globals.css` import แค่ theme + utilities
+  · CSS เดิมอยู่ใน `app/app.css` ซึ่งถูก import เข้า `@layer app` ที่ประกาศไว้**ก่อน** layer ของ Tailwind
+  แปลว่า utility ของ Tailwind ชนะ CSS เดิมได้ (จำเป็นสำหรับ shadcn) แต่ preflight ไม่มาล้าง `.btn` `.card` `.badge` ทิ้ง
+- **แจ้งผลด้วย toast** (`sonner`) สำหรับ success/error ของการกระทำในหน้าเจ้าหน้าที่
+  · `<Toaster />` mount ที่ `app/staff/page.tsx` เท่านั้น หน้าสาธารณะไม่ต้องโหลด
+  · ข้อความ validate ของฟอร์มยังใช้ inline อยู่ (toast แจ้ง "จำนวนต้องมากกว่า 0" ทั้งที่ช่องอยู่ตรงหน้าคือแย่กว่า)
 - ก่อน commit: `npx tsc --noEmit` และ `npx next build` (ยังไม่มี automated test suite)
 
 ## คำสั่งที่ใช้บ่อย
@@ -82,7 +95,13 @@ npm run build             # production build
 
 - **Dialog**: ใช้ `components/Dialog.tsx` เสมอ **ห้ามใช้ `window.prompt()`/`confirm()`**
   (แต่งหน้าตาไม่ได้ ตรวจค่าก่อนปิดไม่ได้ ใส่ date picker ไม่ได้)
+  · ตัวนี้เป็น adapter บาง ๆ ทับ `components/ui/dialog.tsx` (shadcn/Radix) — ได้ focus trap มาด้วย
+- **เมนูบนมือถือ**: หน้าเจ้าหน้าที่ใช้ `Sheet` ของ shadcn เปิดจากปุ่มใน header
+  ไม่มี bottom tab bar แล้ว (7 แท็บบนจอ 393px = ปุ่มละ 55px ซึ่งกดไม่ได้จริง)
 - **การกระทำที่ย้อนกลับยาก** (ตัดสต็อก เพิ่มสต็อก ปิดบัญชี) ต้องมี **2 ขั้นตอน**
   ขั้นที่สองสรุปให้เห็นว่าตัวเลขจะเปลี่ยนจากเท่าไหร่เป็นเท่าไหร่
+- **แก้บัญชีตัวเอง** ใช้ `PATCH /api/auth/me` ซึ่งเอา id จาก session ไม่ใช่จาก request
+  จะชี้ไปแถวคนอื่นไม่ได้ · เปลี่ยน username หรือรหัสผ่านต้องกรอกรหัสผ่านปัจจุบัน (มี rate limit)
+  · สิทธิ์กับการเปิด-ปิดบัญชีแก้ที่นี่ไม่ได้ ต้องผ่าน `/api/users/[id]` ที่บังคับ admin
 - **บัญชีเจ้าหน้าที่ปิดใช้งาน ไม่ลบ** — ทุกรายการยืม/คืน/อนุมัติอ้างถึงผู้ทำรายการ
   ลบแถวทิ้งจะทำให้ audit log อ่านไม่รู้เรื่อง · และต้องเหลือ admin ที่ใช้งานได้อย่างน้อย 1 คน

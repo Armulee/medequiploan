@@ -161,12 +161,22 @@ export default function StockCarousel() {
         a11y={{ enabled: false }}
       >
         {items.map((e, i) => {
-          const slug = pictureFor(e.name);
+          // An uploaded photograph wins over the bundled one: staff who added
+          // their own picture in the stock tab meant it to be used.
+          const slug = e.image ? null : pictureFor(e.name);
           return (
             <SwiperSlide key={e.equipment_id}>
               <figure className="stock-slide">
                 <div className="stock-shot">
-                  {slug ? (
+                  {e.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={e.image}
+                      alt={e.name}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                    />
+                  ) : slug ? (
                     <Photo slug={slug} name={e.name} eager={i === 0} />
                   ) : (
                     <Package size={72} color="var(--border)" strokeWidth={1.5} />

@@ -53,6 +53,7 @@ export function equipmentView(e: Equipment, onLoan?: number) {
     borrowed_qty: borrowed,
     repair_qty: Math.max(0, missing - borrowed),
     low_stock: e.availableQty <= e.lowStockThreshold,
+    image: e.imageId ? `/api/equipment-photo/${e.imageId}` : '',
   };
 }
 

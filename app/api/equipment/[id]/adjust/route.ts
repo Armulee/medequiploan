@@ -95,6 +95,8 @@ export const POST = route<Ctx>(async (req, { params }) => {
     totalQty: Number(raw.total_qty),
     availableQty: Number(raw.available_qty),
     lowStockThreshold: Number(raw.low_stock_threshold),
+    // db.execute() returns snake_case, so the mapping is by hand.
+    imageId: String(raw.image_id ?? ''),
   };
 
   await db.insert(stockAdjustments).values({

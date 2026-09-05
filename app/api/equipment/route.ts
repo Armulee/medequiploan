@@ -1,7 +1,8 @@
 import { asc, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { equipment, records } from '@/lib/db/schema';
-import { ApiError, json, requireRole, route } from '@/lib/api';
+import { ApiError, bodyOrForm, json, requireRole, route } from '@/lib/api';
+import { saveUpload } from '@/lib/storage';
 import { logAction } from '@/lib/audit';
 import { equipmentView } from '@/lib/views';
 
@@ -24,7 +25,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (req: Request) => {
   const user = await requireRole('admin');
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const { fields: body, files } = await bodyOrForm(req);
 
   const name = String(body.name ?? '').trim();
   const qty = Number.parseInt(String(body.total_qty ?? ''), 10);
@@ -41,6 +42,9 @@ export const POST = route(async (req: Request) => {
       totalQty: qty,
       availableQty: qty,
       lowStockThreshold: Number.isFinite(thresholdRaw) && thresholdRaw >= 0 ? thresholdRaw : 2,
+      // Uploaded before the insert so a rejected file fails the whole call
+      // rather than leaving a row pointing at nothing.
+      imageId: files.image ? await saveUpload('equipment', files.image) : '',
     })
     .returning();
 

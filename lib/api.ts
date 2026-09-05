@@ -78,3 +78,30 @@ export async function requireRole(...roles: Array<SessionUser['role']>): Promise
   }
   return user;
 }
+
+/**
+ * Read a request body that may arrive as JSON or as multipart — the same
+ * endpoint has to serve a form with a file and a form without one, and asking
+ * every caller to send multipart just to change a name would be worse.
+ * Returns the scalar fields plus whichever files came with them.
+ */
+export async function bodyOrForm(
+  req: Request
+): Promise<{ fields: Record<string, unknown>; files: Record<string, File> }> {
+  const type = req.headers.get('content-type') ?? '';
+  if (!type.includes('multipart/form-data')) {
+    return { fields: ((await req.json().catch(() => ({}))) as Record<string, unknown>), files: {} };
+  }
+
+  const form = await req.formData();
+  const fields: Record<string, unknown> = {};
+  const files: Record<string, File> = {};
+  for (const [key, value] of form.entries()) {
+    if (value instanceof File) {
+      if (value.size > 0) files[key] = value;
+    } else {
+      fields[key] = value;
+    }
+  }
+  return { fields, files };
+}

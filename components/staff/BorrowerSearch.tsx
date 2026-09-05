@@ -74,7 +74,7 @@ export default function BorrowerSearch({
                   <div className="sub">
                     {b.borrower_id} · {b.national_id_masked}
                     {b.phone ? ` · ${b.phone}` : ''}
-                    {!b.verified && ' · ยังไม่ยืนยันตัวตน'}
+                    {!b.verified && ' · ยังไม่ได้ตรวจบัตร'}
                   </div>
                 </div>
                 <span className="badge badge-active">เลือก</span>

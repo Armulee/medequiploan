@@ -15,6 +15,8 @@ export type Equipment = {
   borrowed_qty: number;
   repair_qty: number;
   low_stock: boolean;
+  /** Public URL of the catalogue photo, or '' when none was uploaded. */
+  image: string;
 };
 
 export type BorrowerListItem = {

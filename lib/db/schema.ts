@@ -64,6 +64,8 @@ export const equipment = pgTable('equipment', {
   totalQty: integer('total_qty').notNull(),
   availableQty: integer('available_qty').notNull(),
   lowStockThreshold: integer('low_stock_threshold').notNull().default(2),
+  /** Storage id of the catalogue photo, e.g. equipment/1699…_ab12.webp. */
+  imageId: varchar('image_id', { length: 256 }).notNull().default(''),
 });
 
 export const records = pgTable('records', {

@@ -1,12 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
+import {
+  Dialog as UIDialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 /**
- * Modal shell shared by every confirmation and form dialog, replacing the
- * window.prompt() calls the staff app used for approvals and returns. A native
- * prompt can't be styled, can't be validated before it closes, and gives no
- * way to offer a date picker or a set of choices.
+ * The app's dialog shell, now a thin adapter over the shadcn/Radix dialog in
+ * components/ui/dialog.tsx.
+ *
+ * Kept as an adapter rather than rewritten into every call site because the
+ * three tabs that use it pass forms with their own submit handling: swapping
+ * the shell underneath gets Radix's focus trap, escape handling, portal and
+ * scroll lock without touching that logic. The hand-rolled version had the
+ * escape key and the scroll lock but no focus trap — tab would walk straight
+ * out of the dialog and into the page behind it.
  */
 export default function Dialog({
   title,
@@ -21,37 +33,16 @@ export default function Dialog({
   children: React.ReactNode;
   width?: number;
 }) {
-  // Escape closes, and the page behind must not scroll while it is open.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [onClose]);
-
   return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
-      <div
-        className="modal card"
-        style={{ maxWidth: width }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <h2 style={{ marginBottom: subtitle ? 2 : 12 }}>{title}</h2>
-        {subtitle && (
-          <p style={{ color: 'var(--text-muted)', marginTop: 0, marginBottom: 14 }}>{subtitle}</p>
-        )}
+    <UIDialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent style={{ maxWidth: width }}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
+        </DialogHeader>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </UIDialog>
   );
 }
 
@@ -67,13 +58,13 @@ export function DialogActions({
   danger?: boolean;
 }) {
   return (
-    <div className="dialog-actions">
+    <DialogFooter>
       <button type="submit" className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} disabled={busy}>
         {busy ? 'กำลังบันทึก...' : confirmLabel}
       </button>
       <button type="button" className="btn btn-outline" onClick={onCancel} disabled={busy}>
         ยกเลิก
       </button>
-    </div>
+    </DialogFooter>
   );
 }
