@@ -1,6 +1,6 @@
 'use client';
 
-import { TriangleAlert } from 'lucide-react';
+import { ImageOff, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
@@ -73,6 +73,13 @@ export default function RequestSubmission({
           : 'ฟอร์มสาธารณะไม่แก้ข้อมูลในระบบเอง — ตรวจกับรูปบัตรก่อน แล้วค่อยกดอัปเดตถ้าถูกต้อง'}
       </p>
 
+      {/* The card photographed for THIS request, above the values it is meant
+          to verify. Without it the instruction to "check against the ID card"
+          is unfollowable — and for a borrower who already existed, the request
+          is the ONLY place the new photograph lives, because the public form
+          is not allowed to write over what is on file. */}
+      <RequestPhotos request={request} />
+
       <div className="compare">
         {rows.map((k) => {
           const changed = differs.includes(k);
@@ -131,6 +138,64 @@ export default function RequestSubmission({
           </form>
         </Dialog>
       )}
+    </div>
+  );
+}
+
+/**
+ * The attachments that came with this submission.
+ *
+ * Explicit about all three states, because "no photograph shown" used to mean
+ * any of them and a member of staff could not tell which: none was attached,
+ * one was attached but the file is gone, or one is there and loading. The
+ * middle case is the one that matters — a request whose ID card has been lost
+ * cannot be verified, and approving it anyway is the failure this whole screen
+ * exists to prevent.
+ */
+function RequestPhotos({
+  request,
+}: {
+  request: RequestDetailResponse['request'];
+}) {
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
+
+  const photos = [
+    { key: 'id', url: request.id_card_photo_url, label: 'รูปบัตรประชาชนที่แนบมากับคำขอนี้' },
+    { key: 'illness', url: request.illness_photo_url, label: 'รูปอาการป่วย' },
+  ].filter((p) => p.url);
+
+  if (photos.length === 0) {
+    return (
+      <div className="hint hint-error" style={{ marginBottom: 12 }}>
+        <TriangleAlert size={14} /> คำขอนี้ไม่มีรูปบัตรแนบมา — ตรวจสอบตัวตนกับรูปบัตรในประวัติผู้ยืมด้านล่างแทน
+      </div>
+    );
+  }
+
+  return (
+    <div className="photo-grid" style={{ marginBottom: 14 }}>
+      {photos.map((p) => (
+        <figure key={p.key}>
+          {broken[p.key] ? (
+            <div className="photo-missing">
+              <ImageOff size={20} />
+              <span>เปิดรูปไม่ได้ — ไฟล์อาจถูกลบไปแล้ว</span>
+            </div>
+          ) : (
+            // A link as well as an image: the small print on a card is not
+            // readable in a 220px column, and /api/files checks the session
+            // on the full-size view exactly as it does on the thumbnail.
+            <a href={p.url} target="_blank" rel="noreferrer">
+              <img
+                src={p.url}
+                alt={p.label}
+                onError={() => setBroken((b) => ({ ...b, [p.key]: true }))}
+              />
+            </a>
+          )}
+          <figcaption>{p.label}</figcaption>
+        </figure>
+      ))}
     </div>
   );
 }
