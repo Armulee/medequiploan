@@ -7,6 +7,25 @@ import { logAction } from '@/lib/audit';
 
 type Ctx = { params: Promise<{ id: string }> };
 
+/** One staff account, for /staff/users/[id]. Admin only, like the list. */
+export const GET = route<Ctx>(async (_req, { params }) => {
+  await requireRole('admin');
+  const { id } = await params;
+  const [found] = await db.select().from(users).where(eq(users.userId, id));
+  if (!found) throw new ApiError('ไม่พบเจ้าหน้าที่', 404);
+  // The password hash never leaves the server, not even to an admin.
+  return json({
+    user: {
+      user_id: found.userId,
+      username: found.username,
+      name: found.name,
+      role: found.role,
+      active: found.active,
+      created_at: found.createdAt,
+    },
+  });
+});
+
 /**
  * Accounts are deactivated, never deleted. Every borrow, return and approval
  * records who performed it; removing the row would orphan that history and

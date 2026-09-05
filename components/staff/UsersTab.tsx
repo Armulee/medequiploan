@@ -1,28 +1,18 @@
 'use client';
 
+import { ChevronRight, Search } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Alert from '@/components/Alert';
+import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
-import { Search } from 'lucide-react';
 import { api, apiJson } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
-import type { SessionUser } from '@/app/lib/types';
-
-type StaffUser = {
-  user_id: string;
-  username: string;
-  role: 'admin' | 'staff';
-  name: string;
-  active: boolean;
-  created_at: string;
-};
+import type { SessionUser, StaffUser } from '@/app/lib/types';
 
 type SortKey = 'created_desc' | 'created_asc' | 'name_asc';
 
 export default function UsersTab({ currentUser }: { currentUser: SessionUser }) {
   const [users, setUsers] = useState<StaffUser[] | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [adding, setAdding] = useState(false);
   const [confirmOff, setConfirmOff] = useState<StaffUser | null>(null);
 
@@ -34,7 +24,10 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
   const load = useCallback(() => {
     api<{ users: StaffUser[] }>('/api/users')
       .then((d) => setUsers(d.users))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดรายชื่อไม่สำเร็จ'));
+      .catch((e) => {
+        setUsers([]);
+        toast.error(e instanceof Error ? e.message : 'โหลดรายชื่อไม่สำเร็จ');
+      });
   }, []);
 
   useEffect(load, [load]);
@@ -64,43 +57,39 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
   }, [users, search, from, to, sort]);
 
   async function deactivate(u: StaffUser) {
-    setError('');
-    setSuccess('');
     try {
       await apiJson(`/api/users/${u.user_id}`, 'DELETE');
-      setSuccess(`ปิดการใช้งานบัญชี ${u.username} แล้ว`);
-      setConfirmOff(null);
+      toast.success(`ปิดการใช้งานบัญชี ${u.username} แล้ว`);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ปิดการใช้งานไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'ปิดการใช้งานไม่สำเร็จ');
+    } finally {
       setConfirmOff(null);
     }
   }
 
   async function reactivate(u: StaffUser) {
-    setError('');
-    setSuccess('');
     try {
       await apiJson(`/api/users/${u.user_id}`, 'PATCH', { active: true });
-      setSuccess(`เปิดใช้งานบัญชี ${u.username} อีกครั้งแล้ว`);
+      toast.success(`เปิดใช้งานบัญชี ${u.username} อีกครั้งแล้ว`);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'เปิดใช้งานไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'เปิดใช้งานไม่สำเร็จ');
     }
   }
 
   return (
     <>
       <div className="card">
-        <div className="card-head">
+        {/* card-head-row keeps the heading and the button on one line even on
+            a phone, where the stacked default put a full-width button under
+            the title and pushed the whole list down. */}
+        <div className="card-head card-head-row">
           <h1>เจ้าหน้าที่</h1>
           <button className="btn btn-sm btn-primary" onClick={() => setAdding(true)}>
             + เพิ่มเจ้าหน้าที่
           </button>
         </div>
-
-        <Alert kind="error">{error}</Alert>
-        <Alert kind="success">{success}</Alert>
 
         <div className="toolbar">
           <div className="field">
@@ -143,7 +132,9 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
               <div className="list-row" key={u.user_id}>
                 <div>
                   <div className="title">
-                    {u.name}
+                    <Link className="row-link" href={`/staff/users/${u.user_id}`}>
+                      {u.name}
+                    </Link>
                     <span className={`badge ${u.role === 'admin' ? 'badge-approved' : 'badge-active'}`}>
                       {u.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่'}
                     </span>
@@ -156,19 +147,28 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
                     {u.username} · {u.user_id} · เพิ่มเมื่อ {thDate(u.created_at)}
                   </div>
                 </div>
-                {u.active ? (
-                  <button
-                    className="btn btn-sm btn-outline"
-                    disabled={u.user_id === currentUser.user_id}
-                    onClick={() => setConfirmOff(u)}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {u.active ? (
+                    <button
+                      className="btn btn-sm btn-outline"
+                      disabled={u.user_id === currentUser.user_id}
+                      onClick={() => setConfirmOff(u)}
+                    >
+                      ปิดใช้งาน
+                    </button>
+                  ) : (
+                    <button className="btn btn-sm btn-primary" onClick={() => void reactivate(u)}>
+                      เปิดใช้งาน
+                    </button>
+                  )}
+                  <Link
+                    className="icon-btn"
+                    href={`/staff/users/${u.user_id}`}
+                    aria-label={`ดูรายละเอียดของ ${u.name}`}
                   >
-                    ปิดใช้งาน
-                  </button>
-                ) : (
-                  <button className="btn btn-sm btn-primary" onClick={() => void reactivate(u)}>
-                    เปิดใช้งาน
-                  </button>
-                )}
+                    <ChevronRight size={18} />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -178,8 +178,7 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
       {adding && (
         <AddUserDialog
           onClose={() => setAdding(false)}
-          onDone={(msg) => {
-            setSuccess(msg);
+          onDone={() => {
             setAdding(false);
             load();
           }}
@@ -212,15 +211,10 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
   );
 }
 
-function AddUserDialog({
-  onClose,
-  onDone,
-}: {
-  onClose: () => void;
-  onDone: (msg: string) => void;
-}) {
+function AddUserDialog({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState({ name: '', username: '', password: '', role: 'staff' });
-  const [error, setError] = useState('');
+  // Inline, because it is about the password field two rows above it.
+  const [invalid, setInvalid] = useState('');
   const [busy, setBusy] = useState(false);
 
   const set =
@@ -230,21 +224,21 @@ function AddUserDialog({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    if (form.password.length < 8) return setError('รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร');
+    setInvalid('');
+    if (form.password.length < 8) return setInvalid('รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร');
     setBusy(true);
     try {
       await apiJson('/api/users', 'POST', form);
-      onDone(`เพิ่มเจ้าหน้าที่ ${form.name} แล้ว`);
+      toast.success(`เพิ่มเจ้าหน้าที่ ${form.name} แล้ว`);
+      onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'เพิ่มเจ้าหน้าที่ไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'เพิ่มเจ้าหน้าที่ไม่สำเร็จ');
       setBusy(false);
     }
   }
 
   return (
     <Dialog title="เพิ่มเจ้าหน้าที่" onClose={onClose}>
-      <Alert kind="error">{error}</Alert>
       <form onSubmit={submit}>
         <div className="field">
           <label htmlFor="nu_name">ชื่อ-นามสกุล *</label>
@@ -272,7 +266,9 @@ function AddUserDialog({
             onChange={set('password')}
             required
           />
-          <div className="hint">อย่างน้อย 8 ตัวอักษร · แจ้งเจ้าหน้าที่ให้เปลี่ยนหลังเข้าใช้ครั้งแรก</div>
+          <div className={invalid ? 'hint hint-error' : 'hint'}>
+            {invalid || 'อย่างน้อย 8 ตัวอักษร · แจ้งเจ้าหน้าที่ให้เปลี่ยนหลังเข้าใช้ครั้งแรก'}
+          </div>
         </div>
         <div className="field">
           <label htmlFor="nu_role">สิทธิ์ *</label>

@@ -1,23 +1,47 @@
 'use client';
 
-import { ChevronLeft } from 'lucide-react';
-import { useState } from 'react';
-import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
-import BorrowerDetail from './BorrowerDetail';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { api } from '@/app/lib/api';
+import { statusBadgeClass, thDate } from '@/app/lib/format';
+import BackLink from './BackLink';
 import type { LoanRecord } from '@/app/lib/types';
 
 /** A row of the loan history opened in full, the way a request opens in full. */
-export default function RecordDetail({
-  record,
-  onBack,
-}: {
-  record: LoanRecord;
-  onBack: () => void;
-}) {
-  const [showBorrower, setShowBorrower] = useState(false);
+export default function RecordDetail({ recordId }: { recordId: string }) {
+  const [record, setRecord] = useState<LoanRecord | null>(null);
+  const [failed, setFailed] = useState(false);
 
-  if (showBorrower) {
-    return <BorrowerDetail borrowerId={record.borrower_id} onBack={() => setShowBorrower(false)} />;
+  useEffect(() => {
+    api<{ record: LoanRecord }>(`/api/records/${recordId}`)
+      .then((d) => setRecord(d.record))
+      .catch((e) => {
+        setFailed(true);
+        toast.error(e instanceof Error ? e.message : 'โหลดรายการไม่สำเร็จ');
+      });
+  }, [recordId]);
+
+  if (failed) {
+    return (
+      <>
+        <BackLink href="/staff/history" />
+        <div className="card">
+          <div className="empty-state">ไม่พบรายการยืมนี้</div>
+        </div>
+      </>
+    );
+  }
+
+  if (!record) {
+    return (
+      <>
+        <BackLink href="/staff/history" />
+        <div className="card">
+          <div className="empty-state">กำลังโหลด...</div>
+        </div>
+      </>
+    );
   }
 
   const late =
@@ -27,10 +51,7 @@ export default function RecordDetail({
 
   return (
     <>
-      <button className="back-link" onClick={onBack}>
-        <ChevronLeft size={20} strokeWidth={2.5} />
-        กลับ
-      </button>
+      <BackLink href="/staff/history" />
 
       <div className="card">
         <div className="card-head">
@@ -46,9 +67,9 @@ export default function RecordDetail({
           <div>
             <dt>ผู้ยืม</dt>
             <dd>
-              <button className="row-link" onClick={() => setShowBorrower(true)}>
+              <Link className="row-link" href={`/staff/borrowers/${record.borrower_id}`}>
                 {record.borrower_name}
-              </button>
+              </Link>
             </dd>
           </div>
           <div>

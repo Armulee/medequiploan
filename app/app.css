@@ -78,16 +78,18 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 0 0 4px rgba(255,255,255,0.25);
 }
 .app-header .userbox { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; }
-.app-header button.ghost {
+.app-header .ghost {
   background: rgba(255,255,255,0.16);
   border: 1px solid rgba(255,255,255,0.45);
   color: white;
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 0.85rem;
+  text-decoration: none;
+  display: inline-flex; align-items: center;
   transition: background 0.15s var(--ease);
 }
-.app-header button.ghost:hover { background: rgba(255,255,255,0.3); }
+.app-header .ghost:hover { background: rgba(255,255,255,0.3); text-decoration: none; }
 
 .container { max-width: 880px; margin: 0 auto; padding: 16px; padding-bottom: 40px; }
 
@@ -112,7 +114,13 @@ a:hover { text-decoration: underline; }
 
 .field { margin-bottom: 14px; }
 .field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
-.field .hint { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+/* Base rule so a hint outside a .field (under a button, beside an action)
+   still reads as a hint; .field keeps its own spacing. */
+.hint { font-size: 0.82rem; color: var(--text-muted); }
+.field .hint { margin-top: 4px; }
+/* Validation belongs beside the field it is about, not in a banner at the top
+   of the card and not in a toast that covers the input. */
+.hint-error { color: var(--red); font-weight: 600; }
 
 /* Match by exclusion rather than listing types: an <input> with no explicit
    type attribute is still a text field, but `input[type=text]` does not match
@@ -265,13 +273,16 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 @media (min-width: 700px) {
   .app-nav-desktop { display: flex; gap: 6px; }
 }
-.app-nav-desktop button {
+/* Links, not buttons: each tab is now its own route, so it has to be
+   openable in a new tab and reachable by the browser's own history. */
+.app-nav-desktop a {
   background: none; color: white; opacity: 0.85; padding: 9px 16px; border-radius: 999px; font-size: 0.9rem;
+  font-weight: 600; text-decoration: none;
   box-shadow: none;
   display: inline-flex; align-items: center; gap: 7px;
 }
-.app-nav-desktop button.active { background: rgba(255,255,255,0.22); opacity: 1; }
-.app-nav-desktop button:hover { background: rgba(255,255,255,0.15); }
+.app-nav-desktop a.active { background: rgba(255,255,255,0.22); opacity: 1; }
+.app-nav-desktop a:hover { background: rgba(255,255,255,0.15); text-decoration: none; }
 
 /* ================= Public landing page ================= */
 /* Landing page only — the other pages use .app-header. It floats over the
@@ -692,6 +703,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
   .card-head .filter-row { margin: 0; }
   /* Buttons want the full width once stacked; a status pill does not. */
   .card-head > .badge { align-self: flex-start; }
+  /* Except where the action is one short button: a heading on the left and
+     "+ เพิ่ม" on the right reads better than the button spanning the card. */
+  .card-head-row { flex-direction: row; align-items: center; }
+  .card-head-row > .btn { flex-shrink: 0; }
 }
 .card-head h1 { margin-bottom: 0; }
 
@@ -741,10 +756,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 .chart-tick { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
 .chart-value { fill: var(--text); font-size: 12px; font-weight: 600; font-family: inherit; }
 
-button.list-row {
+/* A row that acts: a <button> where it opens a dialog, an <a> where it
+   navigates. Both have to look exactly like the plain rows around them. */
+button.list-row, a.list-row {
   width: 100%; text-align: left; font: inherit; color: inherit;
-  background: none; cursor: pointer;
+  background: var(--orange-bg); cursor: pointer; text-decoration: none;
 }
+a.list-row:hover { text-decoration: none; }
 
 /* Back link above a form — a real target, not a footnote. */
 .back-link {
@@ -874,12 +892,15 @@ button.list-row {
 .row-link:hover { text-decoration: underline; }
 
 /* Clickable dashboard tiles. */
-button.stat-tile {
+button.stat-tile, a.stat-tile {
+  display: block;
   width: 100%; text-align: left; font: inherit; color: inherit;
-  cursor: pointer; box-shadow: none;
+  cursor: pointer; box-shadow: none; text-decoration: none;
   transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
-button.stat-tile:hover { border-color: var(--orange-mid); box-shadow: var(--shadow); }
+button.stat-tile:hover, a.stat-tile:hover {
+  border-color: var(--orange-mid); box-shadow: var(--shadow); text-decoration: none;
+}
 
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
 .toolbar .field { margin-bottom: 0; flex: 1 1 180px; }
@@ -894,8 +915,14 @@ button.stat-tile:hover { border-color: var(--orange-mid); box-shadow: var(--shad
 .detail-grid dt { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px; }
 .detail-grid dd { margin: 0; font-weight: 600; word-break: break-word; }
 .detail-actions {
-  display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+/* What the request actually asks for, above the two buttons that answer it. */
+.detail-ask {
+  flex-basis: 100%;
+  background: var(--orange-bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px;
 }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .photo-grid figure { margin: 0; }
@@ -920,7 +947,11 @@ button.back-link { cursor: pointer; }
   background: var(--white); color: var(--text-muted);
   box-shadow: none;
 }
-.icon-btn:hover { background: var(--orange-bg); color: var(--orange-dark); border-color: var(--orange-mid); }
+.icon-btn:hover {
+  background: var(--orange-bg); color: var(--orange-dark); border-color: var(--orange-mid);
+  text-decoration: none;
+}
+a.icon-btn { flex-shrink: 0; text-decoration: none; }
 
 .photo-field { display: flex; align-items: flex-start; gap: 12px; }
 .photo-field-preview {

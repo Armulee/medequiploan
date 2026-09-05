@@ -1,10 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import Alert from '@/components/Alert';
-import { ChevronLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
+import BackLink from './BackLink';
 import type { BorrowerFull, LoanRecord } from '@/app/lib/types';
 
 /**
@@ -14,46 +15,53 @@ import type { BorrowerFull, LoanRecord } from '@/app/lib/types';
  */
 export default function BorrowerDetail({
   borrowerId,
-  onBack,
+  backHref,
+  backLabel,
   actions,
   requestStatus,
 }: {
   borrowerId: string;
-  onBack: () => void;
+  backHref: string;
+  backLabel?: string;
   actions?: React.ReactNode;
   /** Shown by the request queue, where the decision is what the reader came for. */
   requestStatus?: string;
 }) {
   const [borrower, setBorrower] = useState<BorrowerFull | null>(null);
   const [records, setRecords] = useState<LoanRecord[] | null>(null);
-  const [error, setError] = useState('');
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     api<{ borrower: BorrowerFull }>(`/api/borrowers/${borrowerId}`)
       .then((d) => setBorrower(d.borrower))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดข้อมูลผู้ยืมไม่สำเร็จ'));
+      .catch((e) => {
+        setFailed(true);
+        toast.error(e instanceof Error ? e.message : 'โหลดข้อมูลผู้ยืมไม่สำเร็จ');
+      });
     api<{ records: LoanRecord[] }>(`/api/records?borrower_id=${encodeURIComponent(borrowerId)}`)
       .then((d) => setRecords(d.records))
       .catch(() => setRecords([]));
   }, [borrowerId]);
 
-  if (error) {
+  if (failed) {
     return (
-      <div className="card">
-        <button className="back-link" onClick={onBack}>
-          <ChevronLeft size={20} strokeWidth={2.5} />
-          กลับ
-        </button>
-        <Alert kind="error">{error}</Alert>
-      </div>
+      <>
+        <BackLink href={backHref}>{backLabel}</BackLink>
+        <div className="card">
+          <div className="empty-state">ไม่พบข้อมูลผู้ยืมรายนี้</div>
+        </div>
+      </>
     );
   }
 
   if (!borrower) {
     return (
-      <div className="card">
-        <div className="empty-state">กำลังโหลด...</div>
-      </div>
+      <>
+        <BackLink href={backHref}>{backLabel}</BackLink>
+        <div className="card">
+          <div className="empty-state">กำลังโหลด...</div>
+        </div>
+      </>
     );
   }
 
@@ -62,10 +70,7 @@ export default function BorrowerDetail({
 
   return (
     <>
-      <button className="back-link" onClick={onBack}>
-        <ChevronLeft size={20} strokeWidth={2.5} />
-        กลับ
-      </button>
+      <BackLink href={backHref}>{backLabel}</BackLink>
 
       <div className="card">
         <div className="card-head">
@@ -172,7 +177,7 @@ export default function BorrowerDetail({
             )}
             <div className="list">
               {records.map((r) => (
-                <div className="list-row" key={r.record_id}>
+                <Link className="list-row clickable" key={r.record_id} href={`/staff/records/${r.record_id}`}>
                   <div>
                     <div className="title">{r.equipment_name}</div>
                     <div className="sub">
@@ -182,7 +187,7 @@ export default function BorrowerDetail({
                     </div>
                   </div>
                   <span className={statusBadgeClass(r.status)}>{r.status}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </>

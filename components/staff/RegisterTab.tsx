@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState } from 'react';
-import Alert from '@/components/Alert';
+import { toast } from 'sonner';
 import ConsentNotice from '@/components/ConsentNotice';
 import { apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
@@ -20,9 +21,13 @@ const EMPTY = {
   illness_description: '',
 };
 
+type FieldError = 'national_id' | 'phone' | 'consent';
+
 export default function RegisterTab() {
   const [form, setForm] = useState(EMPTY);
-  const [error, setError] = useState('');
+  // Validation stays next to the field it is about; only the outcome of the
+  // save is raised as a toast.
+  const [invalid, setInvalid] = useState<FieldError | null>(null);
   const [done, setDone] = useState<BorrowerFull | null>(null);
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -37,21 +42,11 @@ export default function RegisterTab() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setDone(null);
+    setInvalid(null);
 
-    if (!isValidThaiNationalId(form.national_id)) {
-      setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบ (13 หลัก)');
-      return;
-    }
-    if (!normalisePhone(form.phone)) {
-      setError('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)');
-      return;
-    }
-    if (!consent) {
-      setError('กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัวและผู้ยืมให้ความยินยอมแล้ว');
-      return;
-    }
+    if (!isValidThaiNationalId(form.national_id)) return setInvalid('national_id');
+    if (!normalisePhone(form.phone)) return setInvalid('phone');
+    if (!consent) return setInvalid('consent');
     setBusy(true);
     try {
       const fd = new FormData();
@@ -59,6 +54,9 @@ export default function RegisterTab() {
       fd.append('consent', 'true');
       if (photo) fd.append('illness_photo', photo);
       const res = await apiForm<{ borrower: BorrowerFull }>('/api/borrowers', fd);
+      toast.success(
+        `ลงทะเบียน ${res.borrower.first_name} ${res.borrower.last_name} แล้ว (รหัส ${res.borrower.borrower_id})`
+      );
       setDone(res.borrower);
       setForm(EMPTY);
       setPhoto(null);
@@ -66,7 +64,7 @@ export default function RegisterTab() {
       setConsent(false);
       if (fileRef.current) fileRef.current.value = '';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ลงทะเบียนไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'ลงทะเบียนไม่สำเร็จ');
     } finally {
       setBusy(false);
     }
@@ -79,11 +77,21 @@ export default function RegisterTab() {
         เลขบัตรประชาชนจะถูกเข้ารหัสก่อนบันทึก และแสดงแบบปิดบังในหน้ารายการ
       </p>
 
-      <Alert kind="error">{error}</Alert>
+      {/* Not a status banner: the toast already said it worked. This is the
+          next thing the staff member wants — the person's page, to lend to
+          them straight away. */}
       {done && (
-        <Alert kind="success">
-          ลงทะเบียนสำเร็จ: {done.first_name} {done.last_name} (รหัส {done.borrower_id})
-        </Alert>
+        <div className="picked-box">
+          <div>
+            <div className="title">
+              ลงทะเบียนแล้ว: {done.first_name} {done.last_name}
+            </div>
+            <div className="sub">รหัส {done.borrower_id}</div>
+          </div>
+          <Link className="btn btn-sm btn-outline" href={`/staff/borrowers/${done.borrower_id}`}>
+            ดูข้อมูล
+          </Link>
+        </div>
       )}
 
       <form onSubmit={onSubmit}>
@@ -111,6 +119,9 @@ export default function RegisterTab() {
             }
             required
           />
+          {invalid === 'national_id' && (
+            <div className="hint hint-error">เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบ (13 หลัก)</div>
+          )}
         </div>
 
         <div className="field">
@@ -130,6 +141,11 @@ export default function RegisterTab() {
               onChange={set('phone')}
               required
             />
+            {invalid === 'phone' && (
+              <div className="hint hint-error">
+                เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ติดต่อได้ (เช่น 0812345678)
+              </div>
+            )}
           </div>
           <div className="field">
             <label htmlFor="reg_line">LINE ID</label>
@@ -182,6 +198,13 @@ export default function RegisterTab() {
           onChange={setConsent}
           label="ข้าพเจ้าได้แจ้งประกาศความเป็นส่วนตัวให้ผู้ยืมทราบ และผู้ยืมให้ความยินยอมแล้ว"
         />
+        {invalid === 'consent' && (
+          <div className="field">
+            <div className="hint hint-error">
+              กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัวและผู้ยืมให้ความยินยอมแล้ว
+            </div>
+          </div>
+        )}
 
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
           {busy ? 'กำลังบันทึก...' : 'บันทึกการลงทะเบียน'}

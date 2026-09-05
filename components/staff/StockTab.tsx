@@ -3,7 +3,6 @@
 import { ImagePlus, Pencil, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import Alert from '@/components/Alert';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiForm, apiJson } from '@/app/lib/api';
 import { formatBytes, resizeImage } from '@/app/lib/resize-image';
@@ -382,7 +381,6 @@ function AdjustDialog({
       subtitle={`คงเหลือ ${item.available_qty} · ทั้งหมด ${item.total_qty}`}
       onClose={onClose}
     >
-      <Alert kind="error">{error}</Alert>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -429,6 +427,9 @@ function AdjustDialog({
             required
             autoFocus
           />
+          {/* Beside the number it is about, not in a banner at the top of the
+              dialog and not in a toast that would cover this very field. */}
+          {error && <div className="hint hint-error">{error}</div>}
         </div>
 
         <div className="field">

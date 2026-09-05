@@ -20,3 +20,4 @@ data/*.json
 data/.encryption_key
 tsconfig.tsbuildinfo
 .cache/
+.env.local

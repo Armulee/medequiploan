@@ -20,7 +20,15 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   - `lib/api.ts` — `route()` wrapper, `requireAuth()`, `requireRole()`
   - `lib/session.ts` — iron-session · `lib/storage.ts` — Vercel Blob (fallback ลงดิสก์ตอน dev)
 - **Frontend**: React ทั้งหมด — `app/page.tsx` (หน้าแรก), `app/request/` (ฟอร์มสาธารณะ),
-  `app/staff/` (แอปเจ้าหน้าที่ tab-based) · component อยู่ที่ `components/`
+  `app/staff/` (แอปเจ้าหน้าที่) · component อยู่ที่ `components/`
+  · **ทุกเมนูของหน้าเจ้าหน้าที่เป็น route จริง** ไม่ใช่ tab state:
+  `/staff` (ภาพรวม) `/staff/register` `/staff/borrow` `/staff/requests` `/staff/stock`
+  `/staff/history` `/staff/users` `/staff/settings` และหน้ารายละเอียด
+  `/staff/requests/[id]` `/staff/records/[id]` `/staff/borrowers/[id]` `/staff/users/[id]`
+  `/staff/audit/[id]` · `app/staff/layout.tsx` ถือ `SessionProvider` + `<Toaster />` +
+  ประตูล็อกอิน (`StaffFrame`) ให้ทั้งกลุ่ม แปลว่าเปลี่ยนหน้าไม่ต้องเช็ค session ใหม่
+  · page.tsx เป็น server component บาง ๆ · หน้าที่อ่าน query string ต้องหุ้ม `<Suspense>`
+  (`useSearchParams` บังคับ) · หน้าที่ต้องรู้ role ให้ดึงจาก `useSession()` ใน client wrapper
 - **ธีม**: สีส้ม `#FF6C1D` ตาม CSS variables ที่ `:root` ใน `app/app.css`
   ฟอนต์ Kanit (หัวข้อ) + Noto Sans Thai (เนื้อหา)
 - **UI kit**: ใช้ **shadcn/ui** ได้ (`components/ui/`) — dialog, sheet, toaster มีแล้ว
@@ -56,9 +64,15 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   · CSS เดิมอยู่ใน `app/app.css` ซึ่งถูก import เข้า `@layer app` ที่ประกาศไว้**ก่อน** layer ของ Tailwind
   แปลว่า utility ของ Tailwind ชนะ CSS เดิมได้ (จำเป็นสำหรับ shadcn) แต่ preflight ไม่มาล้าง `.btn` `.card` `.badge` ทิ้ง
 - **แจ้งผลด้วย toast** (`sonner`) สำหรับ success/error ของการกระทำในหน้าเจ้าหน้าที่
-  · `<Toaster />` mount ที่ `app/staff/page.tsx` เท่านั้น หน้าสาธารณะไม่ต้องโหลด
-  · ข้อความ validate ของฟอร์มยังใช้ inline อยู่ (toast แจ้ง "จำนวนต้องมากกว่า 0" ทั้งที่ช่องอยู่ตรงหน้าคือแย่กว่า)
-- ก่อน commit: `npx tsc --noEmit` และ `npx next build` (ยังไม่มี automated test suite)
+  · `<Toaster />` mount ที่ `app/staff/layout.tsx` เท่านั้น หน้าสาธารณะไม่ต้องโหลด
+  · **ห้ามฝัง `<Alert>` ในหน้า staff อีก** — เหลือที่เดียวคือ `LoginView` (ยังไม่มี frame ให้ toast เกาะ
+  และข้อความ rate limit ต้องอยู่ค้างให้อ่าน)
+  · ข้อความ validate ของฟอร์มยังใช้ inline **ใต้ช่องที่ผิด** ด้วย `.hint.hint-error`
+  (toast แจ้ง "จำนวนต้องมากกว่า 0" ทั้งที่ช่องอยู่ตรงหน้าคือแย่กว่า แถม toast ยังบังช่องนั้นอีก)
+- ก่อน commit: `npx tsc --noEmit` และ `npx next build` (ยังไม่มี automated test suite ถาวร)
+  · ถ้าแตะหน้าเจ้าหน้าที่ ให้เทสด้วยของจริง: ยก Postgres ในเครื่อง (`initdb` ต้องรันด้วย user ที่ไม่ใช่ root)
+  ตั้ง `.env.local` ชี้ไปที่นั้น แล้ว `npm run db:migrate && npm run seed` — แล้วไล่ทุกหน้าทั้งบัญชี
+  staff และ admin (สิทธิ์คนละชุด เห็นคนละเมนู)
 
 ## คำสั่งที่ใช้บ่อย
 
@@ -98,6 +112,12 @@ npm run build             # production build
   · ตัวนี้เป็น adapter บาง ๆ ทับ `components/ui/dialog.tsx` (shadcn/Radix) — ได้ focus trap มาด้วย
 - **เมนูบนมือถือ**: หน้าเจ้าหน้าที่ใช้ `Sheet` ของ shadcn เปิดจากปุ่มใน header
   ไม่มี bottom tab bar แล้ว (7 แท็บบนจอ 393px = ปุ่มละ 55px ซึ่งกดไม่ได้จริง)
+  · ทุกปลายทางเป็น `<Link>` ไม่ใช่ `<button>` — เปิดแท็บใหม่ได้ และปุ่ม back ของเครื่องใช้ได้จริง
+  · แท็บไหน active ดูจาก `usePathname()` ใน `AppShell` (หน้า `[id]` ผูกกลับไปที่แท็บแม่ด้วย `also`)
+- **หน้ารายละเอียดใช้ `BackLink`** ซึ่งเป็นลิงก์ไปปลายทางจริง ไม่ใช่ `onBack` ที่ล้าง state
+  (deep link ตรงเข้าหน้ารายละเอียดแล้วยังกดกลับได้ถูกที่)
+- **แท็บ/ตัวกรองที่ผู้ใช้จะกดกลับมาดูซ้ำ เก็บใน query string** เช่น `/staff/history?tab=audit`,
+  `/staff/borrow?filter=overdue`, `/staff/stock?low=1` — dashboard ลิงก์ตรงเข้าไปด้วย state นั้นเลย
 - **การกระทำที่ย้อนกลับยาก** (ตัดสต็อก เพิ่มสต็อก ปิดบัญชี) ต้องมี **2 ขั้นตอน**
   ขั้นที่สองสรุปให้เห็นว่าตัวเลขจะเปลี่ยนจากเท่าไหร่เป็นเท่าไหร่
 - **แก้บัญชีตัวเอง** ใช้ `PATCH /api/auth/me` ซึ่งเอา id จาก session ไม่ใช่จาก request

@@ -13,6 +13,8 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import Logo from '@/components/Logo';
 import {
@@ -27,53 +29,59 @@ import {
 import { useSession } from '@/app/staff/SessionContext';
 import type { SessionUser } from '@/app/lib/types';
 
-export type TabId =
-  | 'dashboard'
-  | 'register'
-  | 'borrow'
-  | 'requests'
-  | 'stock'
-  | 'history'
-  | 'users'
-  | 'settings';
+type Tab = {
+  href: string;
+  label: string;
+  Icon: LucideIcon;
+  adminOnly?: boolean;
+  /** Detail routes that belong to this tab, so the nav stays lit inside them. */
+  also?: string[];
+};
 
 // adminOnly tabs are filtered out for staff rather than shown and refused —
 // the API enforces the same restriction regardless of what is rendered.
-export const TABS: Array<{ id: TabId; label: string; Icon: LucideIcon; adminOnly?: boolean }> = [
-  { id: 'dashboard', label: 'ภาพรวม', Icon: LayoutDashboard },
-  { id: 'register', label: 'ลงทะเบียน', Icon: UserPlus },
-  { id: 'borrow', label: 'ยืม-คืน', Icon: ArrowRightLeft },
-  { id: 'requests', label: 'คำขอ', Icon: FileCheck },
-  { id: 'stock', label: 'สต็อก', Icon: SlidersHorizontal },
-  { id: 'history', label: 'ประวัติ', Icon: History },
-  { id: 'users', label: 'เจ้าหน้าที่', Icon: Users, adminOnly: true },
+const TABS: Tab[] = [
+  { href: '/staff', label: 'ภาพรวม', Icon: LayoutDashboard },
+  { href: '/staff/register', label: 'ลงทะเบียน', Icon: UserPlus },
+  { href: '/staff/borrow', label: 'ยืม-คืน', Icon: ArrowRightLeft },
+  { href: '/staff/requests', label: 'คำขอ', Icon: FileCheck, also: ['/staff/borrowers'] },
+  { href: '/staff/stock', label: 'สต็อก', Icon: SlidersHorizontal },
+  {
+    href: '/staff/history',
+    label: 'ประวัติ',
+    Icon: History,
+    also: ['/staff/records', '/staff/audit'],
+  },
+  { href: '/staff/users', label: 'เจ้าหน้าที่', Icon: Users, adminOnly: true },
 ];
 
-export function tabsFor(role: string) {
+function tabsFor(role: string) {
   return TABS.filter((t) => !t.adminOnly || role === 'admin');
+}
+
+/** The dashboard is the index of /staff, so only it matches exactly. */
+function isActive(tab: Tab, pathname: string) {
+  const hit = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
+  if (tab.href === '/staff') return pathname === '/staff';
+  return hit(tab.href) || (tab.also ?? []).some(hit);
 }
 
 const roleLabel = (role: string) => (role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่');
 
 export default function AppShell({
   user,
-  tab,
-  onTabChange,
   children,
 }: {
   user: SessionUser;
-  tab: TabId;
-  onTabChange: (t: TabId) => void;
   children: React.ReactNode;
 }) {
   const { logout } = useSession();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const tabs = tabsFor(user.role);
+  const settingsActive = pathname.startsWith('/staff/settings');
 
-  const go = (t: TabId) => {
-    onTabChange(t);
-    setMenuOpen(false);
-  };
+  const close = () => setMenuOpen(false);
 
   return (
     <>
@@ -85,10 +93,10 @@ export default function AppShell({
 
         <nav className="app-nav-desktop">
           {tabs.map((t) => (
-            <button key={t.id} className={t.id === tab ? 'active' : ''} onClick={() => go(t.id)}>
+            <Link key={t.href} href={t.href} className={isActive(t, pathname) ? 'active' : ''}>
               <t.Icon size={18} />
               <span>{t.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
 
@@ -98,14 +106,14 @@ export default function AppShell({
           <span>
             {user.name} ({roleLabel(user.role)})
           </span>
-          <button
+          <Link
             className="ghost"
-            onClick={() => go('settings')}
+            href="/staff/settings"
             aria-label="ตั้งค่าบัญชี"
             title="ตั้งค่าบัญชี"
           >
             <Settings size={16} />
-          </button>
+          </Link>
           <button className="ghost" onClick={logout}>
             ออกจากระบบ
           </button>
@@ -134,35 +142,37 @@ export default function AppShell({
 
             <nav className="flex flex-col p-2">
               {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => go(t.id)}
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  onClick={close}
                   className={[
-                    'flex items-center gap-3 rounded-[12px] border-none px-3 py-3.5 text-left text-[1.02rem] font-semibold shadow-none',
-                    t.id === tab
+                    'flex items-center gap-3 rounded-[12px] px-3 py-3.5 text-left text-[1.02rem] font-semibold no-underline',
+                    isActive(t, pathname)
                       ? 'bg-[var(--orange-light)] text-[var(--orange-deep)]'
                       : 'bg-transparent text-[var(--text)]',
                   ].join(' ')}
                 >
                   <t.Icon size={22} />
                   {t.label}
-                </button>
+                </Link>
               ))}
             </nav>
 
             <div className="flex flex-col gap-1 border-t border-[var(--border)] p-2">
-              <button
-                onClick={() => go('settings')}
+              <Link
+                href="/staff/settings"
+                onClick={close}
                 className={[
-                  'flex items-center gap-3 rounded-[12px] border-none px-3 py-3.5 text-left text-[1.02rem] font-semibold shadow-none',
-                  tab === 'settings'
+                  'flex items-center gap-3 rounded-[12px] px-3 py-3.5 text-left text-[1.02rem] font-semibold no-underline',
+                  settingsActive
                     ? 'bg-[var(--orange-light)] text-[var(--orange-deep)]'
                     : 'bg-transparent text-[var(--text)]',
                 ].join(' ')}
               >
                 <Settings size={22} />
                 ตั้งค่าบัญชี
-              </button>
+              </Link>
               <SheetClose asChild>
                 <button
                   onClick={logout}

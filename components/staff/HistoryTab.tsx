@@ -1,45 +1,31 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import Alert from '@/components/Alert';
+import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
+import { actionLabel } from './actionLabels';
 import BorrowerSearch from './BorrowerSearch';
-import RecordDetail from './RecordDetail';
 import type { AuditEntry, BorrowerListItem, Equipment, LoanRecord } from '@/app/lib/types';
 
-type SubTab = 'borrower' | 'equipment' | 'audit';
-
-const ACTION_LABELS: Record<string, string> = {
-  login: 'เข้าสู่ระบบ',
-  logout: 'ออกจากระบบ',
-  borrow: 'ยืมอุปกรณ์',
-  return: 'รับคืนอุปกรณ์',
-  register_borrower: 'ลงทะเบียนผู้ยืม',
-  self_register_borrower: 'ผู้ใช้ลงทะเบียนเอง',
-  submit_request: 'ส่งคำขอยืม',
-  approve_request: 'อนุมัติคำขอ',
-  reject_request: 'ปฏิเสธคำขอ',
-  create_equipment: 'เพิ่มอุปกรณ์',
-  update_equipment: 'แก้ไขอุปกรณ์',
-  adjust_stock: 'ตัดสต็อก',
-};
-
-type Opened = { kind: 'record'; record: LoanRecord } | { kind: 'audit'; entry: AuditEntry };
+const SUBS = ['borrower', 'equipment', 'audit'] as const;
+type SubTab = (typeof SUBS)[number];
 
 export default function HistoryTab({ isAdmin }: { isAdmin: boolean }) {
-  const [sub, setSub] = useState<SubTab>('borrower');
-  // Held here rather than inside each sub-tab so an opened row REPLACES the
-  // tab instead of rendering a card inside the tab's own card.
-  const [open, setOpen] = useState<Opened | null>(null);
+  const router = useRouter();
+  const params = useSearchParams();
+  const asked = params.get('tab') as SubTab | null;
+  // Held in the URL, so a back gesture out of a record returns to the sub-tab
+  // it was opened from rather than resetting to the first one.
+  const sub: SubTab = asked && SUBS.includes(asked) && (asked !== 'audit' || isAdmin)
+    ? asked
+    : 'borrower';
 
-  if (open?.kind === 'record') {
-    return <RecordDetail record={open.record} onBack={() => setOpen(null)} />;
-  }
-  if (open?.kind === 'audit') {
-    return <AuditDetail entry={open.entry} onBack={() => setOpen(null)} />;
-  }
+  const go = (next: SubTab) =>
+    router.replace(next === 'borrower' ? '/staff/history' : `/staff/history?tab=${next}`);
 
   return (
     <div className="card">
@@ -47,13 +33,13 @@ export default function HistoryTab({ isAdmin }: { isAdmin: boolean }) {
       <div className="filter-row">
         <button
           className={`btn btn-sm ${sub === 'borrower' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setSub('borrower')}
+          onClick={() => go('borrower')}
         >
           ประวัติผู้ยืม
         </button>
         <button
           className={`btn btn-sm ${sub === 'equipment' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setSub('equipment')}
+          onClick={() => go('equipment')}
         >
           ประวัติอุปกรณ์
         </button>
@@ -61,38 +47,30 @@ export default function HistoryTab({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && (
           <button
             className={`btn btn-sm ${sub === 'audit' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setSub('audit')}
+            onClick={() => go('audit')}
           >
             Audit Log
           </button>
         )}
       </div>
 
-      {sub === 'borrower' && (
-        <BorrowerHistory onOpen={(record) => setOpen({ kind: 'record', record })} />
-      )}
-      {sub === 'equipment' && (
-        <EquipmentHistory onOpen={(record) => setOpen({ kind: 'record', record })} />
-      )}
-      {sub === 'audit' && isAdmin && (
-        <AuditLog onOpen={(entry) => setOpen({ kind: 'audit', entry })} />
-      )}
+      {sub === 'borrower' && <BorrowerHistory />}
+      {sub === 'equipment' && <EquipmentHistory />}
+      {sub === 'audit' && isAdmin && <AuditLog />}
     </div>
   );
 }
 
-function RecordList({
-  records,
-  onOpen,
-}: {
-  records: LoanRecord[];
-  onOpen: (r: LoanRecord) => void;
-}) {
+function RecordList({ records }: { records: LoanRecord[] }) {
   if (records.length === 0) return <div className="empty-state">ยังไม่มีประวัติการยืม</div>;
   return (
     <div className="list">
       {records.map((r) => (
-        <button className="list-row clickable" key={r.record_id} onClick={() => onOpen(r)}>
+        <Link
+          className="list-row clickable"
+          key={r.record_id}
+          href={`/staff/records/${r.record_id}`}
+        >
           <div>
             <div className="title">{r.equipment_name}</div>
             <div className="sub">
@@ -105,23 +83,25 @@ function RecordList({
             <span className={statusBadgeClass(r.status)}>{r.status}</span>
             <ChevronRight size={16} className="stat-arrow" />
           </span>
-        </button>
+        </Link>
       ))}
     </div>
   );
 }
 
-function BorrowerHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
+function BorrowerHistory() {
   const [picked, setPicked] = useState<BorrowerListItem | null>(null);
   const [records, setRecords] = useState<LoanRecord[] | null>(null);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!picked) return;
     setRecords(null);
     api<{ records: LoanRecord[] }>(`/api/records?borrower_id=${encodeURIComponent(picked.borrower_id)}`)
       .then((d) => setRecords(d.records))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดประวัติไม่สำเร็จ'));
+      .catch((e) => {
+        setRecords([]);
+        toast.error(e instanceof Error ? e.message : 'โหลดประวัติไม่สำเร็จ');
+      });
   }, [picked]);
 
   // Only loans that had a due date can be judged on-time, so the rate is
@@ -136,7 +116,9 @@ function BorrowerHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
         <div className="picked-box">
           <div>
             <div className="title">
-              {picked.first_name} {picked.last_name}
+              <Link className="row-link" href={`/staff/borrowers/${picked.borrower_id}`}>
+                {picked.first_name} {picked.last_name}
+              </Link>
             </div>
             <div className="sub">
               {picked.borrower_id} · {picked.national_id_masked}
@@ -151,8 +133,6 @@ function BorrowerHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
         <BorrowerSearch onPick={setPicked} />
       )}
 
-      <Alert kind="error">{error}</Alert>
-
       {picked && records !== null && (
         <>
           {pct !== null && (
@@ -160,20 +140,23 @@ function BorrowerHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
               คืนตรงเวลา <strong>{pct}%</strong> ({onTime}/{judged.length} รายการที่มีกำหนดคืน)
             </div>
           )}
-          <RecordList records={records} onOpen={onOpen} />
+          <RecordList records={records} />
         </>
       )}
+      {picked && records === null && <div className="empty-state">กำลังโหลด...</div>}
     </>
   );
 }
 
-function EquipmentHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
+function EquipmentHistory() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [selected, setSelected] = useState<Equipment | null>(null);
   const [records, setRecords] = useState<LoanRecord[] | null>(null);
 
   useEffect(() => {
-    api<{ equipment: Equipment[] }>('/api/equipment').then((d) => setEquipment(d.equipment)).catch(() => {});
+    api<{ equipment: Equipment[] }>('/api/equipment')
+      .then((d) => setEquipment(d.equipment))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดรายการอุปกรณ์ไม่สำเร็จ'));
   }, []);
 
   useEffect(() => {
@@ -181,7 +164,10 @@ function EquipmentHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
     setRecords(null);
     api<{ records: LoanRecord[] }>(`/api/records?equipment_id=${encodeURIComponent(selected.equipment_id)}`)
       .then((d) => setRecords(d.records))
-      .catch(() => setRecords([]));
+      .catch((e) => {
+        setRecords([]);
+        toast.error(e instanceof Error ? e.message : 'โหลดประวัติไม่สำเร็จ');
+      });
   }, [selected]);
 
   return (
@@ -208,100 +194,41 @@ function EquipmentHistory({ onOpen }: { onOpen: (r: LoanRecord) => void }) {
         (records === null ? (
           <div className="empty-state">กำลังโหลด...</div>
         ) : (
-          <RecordList records={records} onOpen={onOpen} />
+          <RecordList records={records} />
         ))}
     </>
   );
 }
 
-function AuditLog({ onOpen }: { onOpen: (e: AuditEntry) => void }) {
+function AuditLog() {
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
-  const [error, setError] = useState('');
 
-  const load = useCallback(() => {
+  useEffect(() => {
     api<{ audit_log: AuditEntry[] }>('/api/audit-log?limit=200')
       .then((d) => setEntries(d.audit_log))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลด audit log ไม่สำเร็จ'));
+      .catch((e) => {
+        setEntries([]);
+        toast.error(e instanceof Error ? e.message : 'โหลด audit log ไม่สำเร็จ');
+      });
   }, []);
 
-  useEffect(load, [load]);
+  if (entries === null) return <div className="empty-state">กำลังโหลด...</div>;
+  if (entries.length === 0) return <div className="empty-state">ยังไม่มีประวัติการกระทำ</div>;
 
   return (
-    <>
-      <Alert kind="error">{error}</Alert>
-      {entries === null ? (
-        <div className="empty-state">กำลังโหลด...</div>
-      ) : entries.length === 0 ? (
-        <div className="empty-state">ยังไม่มีประวัติการกระทำ</div>
-      ) : (
-        <div className="list">
-          {entries.map((l) => (
-            <button className="list-row clickable" key={l.log_id} onClick={() => onOpen(l)}>
-              <div>
-                <div className="title">{ACTION_LABELS[l.action] ?? l.action}</div>
-                <div className="sub">
-                  {l.actor_name} · {thDateTime(l.at)}
-                  {l.target_id ? ` · ${l.target_type} ${l.target_id}` : ''}
-                </div>
-              </div>
-              <ChevronRight size={16} className="stat-arrow" style={{ flexShrink: 0 }} />
-            </button>
-          ))}
-        </div>
-      )}
-    </>
-  );
-}
-
-/** One audit line in full: the list has to stay scannable, this does not. */
-function AuditDetail({ entry, onBack }: { entry: AuditEntry; onBack: () => void }) {
-  return (
-    <>
-      <button className="back-link" onClick={onBack}>
-        <ChevronLeft size={20} strokeWidth={2.5} />
-        กลับ
-      </button>
-
-      <div className="card">
-        <div className="card-head">
-          <h1>{ACTION_LABELS[entry.action] ?? entry.action}</h1>
-          <span className="badge badge-active">{entry.log_id}</span>
-        </div>
-
-        <dl className="detail-grid">
+    <div className="list">
+      {entries.map((l) => (
+        <Link className="list-row clickable" key={l.log_id} href={`/staff/audit/${l.log_id}`}>
           <div>
-            <dt>เวลา</dt>
-            <dd>{thDateTime(entry.at)}</dd>
+            <div className="title">{actionLabel(l.action)}</div>
+            <div className="sub">
+              {l.actor_name} · {thDateTime(l.at)}
+              {l.target_id ? ` · ${l.target_type} ${l.target_id}` : ''}
+            </div>
           </div>
-          <div>
-            <dt>ผู้ทำรายการ</dt>
-            <dd>{entry.actor_name}</dd>
-          </div>
-          <div>
-            <dt>รหัสผู้ทำรายการ</dt>
-            <dd>{entry.actor_user_id || '-'}</dd>
-          </div>
-          <div>
-            <dt>ชนิดข้อมูลที่ถูกกระทำ</dt>
-            <dd>{entry.target_type || '-'}</dd>
-          </div>
-          <div>
-            <dt>รหัสข้อมูลที่ถูกกระทำ</dt>
-            <dd>{entry.target_id || '-'}</dd>
-          </div>
-          <div>
-            {/* The raw code as well as the Thai label: a line written by a
-                version that knew an action this one does not would otherwise
-                show only its own key. */}
-            <dt>รหัสการกระทำ</dt>
-            <dd>{entry.action}</dd>
-          </div>
-          <div className="detail-wide">
-            <dt>รายละเอียด</dt>
-            <dd style={{ whiteSpace: 'pre-wrap' }}>{entry.details || '-'}</dd>
-          </div>
-        </dl>
-      </div>
-    </>
+          <ChevronRight size={16} className="stat-arrow" style={{ flexShrink: 0 }} />
+        </Link>
+      ))}
+    </div>
   );
 }

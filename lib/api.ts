@@ -46,6 +46,24 @@ export function errorResponse(err: unknown) {
       { status: 500 }
     );
   }
+  // A migration that has not been run turns every query touching the changed
+  // table into a generic 500, which is indistinguishable from a bug — one
+  // shipped column cost a round of "approve says error but it approved". Say
+  // what it is instead: the write had already happened, only the read back
+  // failed.
+  const code = (err as { code?: string } | null)?.code;
+  if (code === '42703' || code === '42P01') {
+    return NextResponse.json(
+      {
+        error:
+          'ฐานข้อมูลยังไม่ตรงกับโค้ดเวอร์ชันนี้ (ยังไม่ได้รัน migration) ' +
+          'ให้ผู้ดูแลระบบรัน: npm run db:migrate',
+        code: 'SCHEMA',
+      },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ (server error)' }, { status: 500 });
 }
 

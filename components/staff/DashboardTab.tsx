@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Alert from '@/components/Alert';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
 import MonthlyChart from './MonthlyChart';
@@ -27,22 +28,34 @@ type Dashboard = {
   monthly: Array<{ month: string; borrows: number }>;
 };
 
-export type DashboardJump =
-  | { tab: 'borrow'; filter: 'active' | 'overdue' }
-  | { tab: 'requests'; filter: 'รอดำเนินการ' }
-  | { tab: 'stock'; filter: 'low' };
-
-export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) => void }) {
+export default function DashboardTab() {
   const [data, setData] = useState<Dashboard | null>(null);
-  const [error, setError] = useState('');
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     api<Dashboard>('/api/dashboard')
       .then(setData)
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดข้อมูลภาพรวมไม่สำเร็จ'));
+      .catch((e) => {
+        setFailed(true);
+        toast.error(e instanceof Error ? e.message : 'โหลดข้อมูลภาพรวมไม่สำเร็จ');
+      });
   }, []);
 
-  if (error) return <div className="card"><Alert kind="error">{error}</Alert></div>;
+  if (failed) {
+    return (
+      <div className="card">
+        <h1>ภาพรวมระบบ</h1>
+        <div className="empty-state">
+          โหลดข้อมูลไม่สำเร็จ
+          <div style={{ marginTop: 10 }}>
+            <button className="btn btn-sm btn-outline" onClick={() => location.reload()}>
+              ลองอีกครั้ง
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!data) return <div className="card"><div className="empty-state">กำลังโหลด...</div></div>;
 
   const s = data.summary;
@@ -55,32 +68,27 @@ export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) =>
         {/* Each tile opens the list it counts, already filtered — the number
             on its own only ever prompts the question "which ones?" */}
         <div className="stat-row">
-          <StatTile
-            label="กำลังยืมอยู่"
-            value={s.active_loans}
-            unit="รายการ"
-            onClick={() => onJump({ tab: 'borrow', filter: 'active' })}
-          />
+          <StatTile label="กำลังยืมอยู่" value={s.active_loans} unit="รายการ" href="/staff/borrow" />
           <StatTile
             label="เกินกำหนดคืน"
             value={s.overdue_loans}
             unit="รายการ"
             tone={s.overdue_loans > 0 ? 'danger' : undefined}
-            onClick={() => onJump({ tab: 'borrow', filter: 'overdue' })}
+            href="/staff/borrow?filter=overdue"
           />
           <StatTile
             label="คำขอรออนุมัติ"
             value={s.pending_requests}
             unit="คำขอ"
             tone={s.pending_requests > 0 ? 'warn' : undefined}
-            onClick={() => onJump({ tab: 'requests', filter: 'รอดำเนินการ' })}
+            href="/staff/requests?status=รอดำเนินการ"
           />
           <StatTile
             label="อุปกรณ์ใกล้หมด"
             value={s.low_stock_items}
             unit="รายการ"
             tone={s.low_stock_items > 0 ? 'warn' : undefined}
-            onClick={() => onJump({ tab: 'stock', filter: 'low' })}
+            href="/staff/stock?low=1"
           />
         </div>
 
@@ -105,7 +113,11 @@ export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) =>
         ) : (
           <div className="list">
             {data.overdue.map((o) => (
-              <div className="list-row" key={o.record_id}>
+              <Link
+                className="list-row clickable"
+                key={o.record_id}
+                href={`/staff/records/${o.record_id}`}
+              >
                 <div>
                   <div className="title">{o.equipment_name}</div>
                   <div className="sub">
@@ -113,7 +125,7 @@ export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) =>
                   </div>
                 </div>
                 <span className="badge badge-overdue">เกิน {o.days_overdue} วัน</span>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -148,20 +160,20 @@ function StatTile({
   value,
   unit,
   tone,
-  onClick,
+  href,
 }: {
   label: string;
   value: number;
   unit: string;
   tone?: 'warn' | 'danger';
-  onClick?: () => void;
+  href?: string;
 }) {
   const className = `stat-tile${tone ? ` stat-${tone}` : ''}`;
   const body = (
     <>
       <div className="stat-label">
         {label}
-        {onClick && <ChevronRight size={15} className="stat-arrow" />}
+        {href && <ChevronRight size={15} className="stat-arrow" />}
       </div>
       <div className="stat-value">
         {value.toLocaleString('th-TH')}
@@ -170,10 +182,10 @@ function StatTile({
     </>
   );
 
-  if (!onClick) return <div className={className}>{body}</div>;
+  if (!href) return <div className={className}>{body}</div>;
   return (
-    <button type="button" className={className} onClick={onClick}>
+    <Link className={className} href={href}>
       {body}
-    </button>
+    </Link>
   );
 }

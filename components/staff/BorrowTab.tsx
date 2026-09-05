@@ -1,37 +1,40 @@
 'use client';
 
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import Alert from '@/components/Alert';
+import { toast } from 'sonner';
+import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDate } from '@/app/lib/format';
 import BorrowerSearch from './BorrowerSearch';
 import type { BorrowerListItem, Equipment, LoanRecord } from '@/app/lib/types';
 
-export default function BorrowTab({
-  initialFilter,
-}: {
-  initialFilter?: 'active' | 'overdue';
-}) {
+export default function BorrowTab() {
+  // ?filter=overdue is what the dashboard's "เกินกำหนดคืน" tile links to.
+  const initialFilter = useSearchParams().get('filter');
   const [picked, setPicked] = useState<BorrowerListItem | null>(null);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [equipmentId, setEquipmentId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [active, setActive] = useState<LoanRecord[] | null>(null);
   const [onlyOverdue, setOnlyOverdue] = useState(initialFilter === 'overdue');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [returning, setReturning] = useState<LoanRecord | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadEquipment = useCallback(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
       .then((d) => setEquipment(d.equipment))
-      .catch(() => setError('โหลดรายการอุปกรณ์ไม่สำเร็จ'));
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดรายการอุปกรณ์ไม่สำเร็จ'));
   }, []);
 
   const loadActive = useCallback(() => {
     api<{ records: LoanRecord[] }>('/api/records')
       .then((d) => setActive(d.records.filter((r) => r.status !== 'คืนแล้ว')))
-      .catch((e) => setError(e instanceof Error ? e.message : 'โหลดรายการยืมไม่สำเร็จ'));
+      .catch((e) => {
+        setActive([]);
+        toast.error(e instanceof Error ? e.message : 'โหลดรายการยืมไม่สำเร็จ');
+      });
   }, []);
 
   useEffect(() => {
@@ -41,10 +44,7 @@ export default function BorrowTab({
 
   async function onBorrow(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!picked) return setError('กรุณาเลือกผู้ยืม');
-    if (!equipmentId) return setError('กรุณาเลือกอุปกรณ์');
+    if (!picked || !equipmentId) return;
 
     setBusy(true);
     try {
@@ -53,7 +53,7 @@ export default function BorrowTab({
         equipment_id: equipmentId,
         due_date: dueDate || null,
       });
-      setSuccess('บันทึกการยืมสำเร็จ');
+      toast.success(`บันทึกการยืมของ ${picked.first_name} ${picked.last_name} แล้ว`);
       setPicked(null);
       setEquipmentId('');
       setDueDate('');
@@ -62,30 +62,9 @@ export default function BorrowTab({
       loadEquipment();
       loadActive();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'บันทึกการยืมไม่สำเร็จ');
+      toast.error(err instanceof Error ? err.message : 'บันทึกการยืมไม่สำเร็จ');
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function onReturn(record: LoanRecord) {
-    const condition = window.prompt(
-      `คืนอุปกรณ์: ${record.equipment_name}\nสภาพอุปกรณ์ตอนรับคืน (เว้นว่างได้)`,
-      'สภาพปกติ'
-    );
-    if (condition === null) return;
-
-    setError('');
-    setSuccess('');
-    try {
-      await apiJson(`/api/records/${record.record_id}/return`, 'PUT', {
-        condition_on_return: condition,
-      });
-      setSuccess(`รับคืน ${record.equipment_name} เรียบร้อย`);
-      loadEquipment();
-      loadActive();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'บันทึกการคืนไม่สำเร็จ');
     }
   }
 
@@ -95,8 +74,6 @@ export default function BorrowTab({
     <>
       <div className="card">
         <h1>บันทึกการยืม</h1>
-        <Alert kind="error">{error}</Alert>
-        <Alert kind="success">{success}</Alert>
 
         {picked ? (
           <div className="picked-box">
@@ -144,6 +121,7 @@ export default function BorrowTab({
           <button type="submit" className="btn btn-primary btn-block" disabled={busy || !picked}>
             {busy ? 'กำลังบันทึก...' : 'บันทึกการยืม'}
           </button>
+          {!picked && <div className="hint">เลือกผู้ยืมจากรายการด้านบนก่อน</div>}
         </form>
       </div>
 
@@ -176,7 +154,11 @@ export default function BorrowTab({
             {shown.map((r) => (
               <div className="list-row" key={r.record_id}>
                 <div>
-                  <div className="title">{r.equipment_name}</div>
+                  <div className="title">
+                    <Link className="row-link" href={`/staff/records/${r.record_id}`}>
+                      {r.equipment_name}
+                    </Link>
+                  </div>
                   <div className="sub">
                     {r.borrower_name} · ยืม {thDate(r.borrow_date)}
                     {r.due_date ? ` · ครบกำหนด ${thDate(r.due_date)}` : ''}
@@ -184,7 +166,7 @@ export default function BorrowTab({
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span className={statusBadgeClass(r.status)}>{r.status}</span>
-                  <button className="btn btn-sm btn-primary" onClick={() => onReturn(r)}>
+                  <button className="btn btn-sm btn-primary" onClick={() => setReturning(r)}>
                     รับคืน
                   </button>
                 </div>
@@ -193,6 +175,73 @@ export default function BorrowTab({
           </div>
         )}
       </div>
+
+      {returning && (
+        <ReturnDialog
+          record={returning}
+          onClose={() => setReturning(null)}
+          onDone={() => {
+            setReturning(null);
+            loadEquipment();
+            loadActive();
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Receiving a return used window.prompt(), which cannot be styled, cannot
+ * validate, and on a phone is a system sheet with no context at all.
+ */
+function ReturnDialog({
+  record,
+  onClose,
+  onDone,
+}: {
+  record: LoanRecord;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [condition, setCondition] = useState('สภาพปกติ');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await apiJson(`/api/records/${record.record_id}/return`, 'PUT', {
+        condition_on_return: condition.trim(),
+      });
+      toast.success(`รับคืน ${record.equipment_name} เรียบร้อย`);
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'บันทึกการคืนไม่สำเร็จ');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      title="รับคืนอุปกรณ์"
+      subtitle={`${record.equipment_name} · ${record.borrower_name}`}
+      onClose={onClose}
+    >
+      <form onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="ret_condition">สภาพอุปกรณ์ตอนรับคืน</label>
+          <textarea
+            id="ret_condition"
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            placeholder="เช่น สภาพปกติ · ล้อหลวม ต้องซ่อม"
+            autoFocus
+          />
+          <div className="hint">เว้นว่างได้ · จะแสดงในประวัติของอุปกรณ์ชิ้นนี้</div>
+        </div>
+        <DialogActions confirmLabel="ยืนยันรับคืน" onCancel={onClose} busy={busy} />
+      </form>
+    </Dialog>
   );
 }

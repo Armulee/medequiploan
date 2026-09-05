@@ -5,6 +5,16 @@ export type SessionUser = {
   name: string;
 };
 
+/** A staff account as /api/users returns it — never a password hash. */
+export type StaffUser = {
+  user_id: string;
+  username: string;
+  role: 'admin' | 'staff';
+  name: string;
+  active: boolean;
+  created_at: string;
+};
+
 export type Equipment = {
   equipment_id: string;
   name: string;
