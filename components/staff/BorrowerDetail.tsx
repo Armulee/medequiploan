@@ -19,6 +19,7 @@ export default function BorrowerDetail({
   backHref,
   backLabel,
   actions,
+  extra,
   requestStatus,
   refreshKey = 0,
   onLoaded,
@@ -27,6 +28,9 @@ export default function BorrowerDetail({
   backHref: string;
   backLabel?: string;
   actions?: React.ReactNode;
+  /** Rendered between the record and its attachments — the request queue puts
+      what the submission claimed there, where it is read before the photos. */
+  extra?: React.ReactNode;
   /** Shown by the request queue, where the decision is what the reader came for. */
   requestStatus?: string;
   /** Bumped by the parent after lending, so the loan list below reflects it. */
@@ -164,6 +168,8 @@ export default function BorrowerDetail({
 
         {actions && <div className="detail-actions">{actions}</div>}
       </div>
+
+      {extra}
 
       {(borrower.id_card_photo_url || borrower.illness_photo_url) && (
         <div className="card">

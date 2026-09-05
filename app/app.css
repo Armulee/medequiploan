@@ -947,6 +947,28 @@ button.stat-tile:hover, a.stat-tile:hover {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
 }
+/* Submitted-vs-on-file. Two values side by side on a desktop, stacked on a
+   phone, with the disagreements marked — a changed phone number on a request
+   nobody authenticated is the thing staff must not skim past. */
+.compare { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.compare-row {
+  display: grid; grid-template-columns: 1fr; gap: 4px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--orange-bg);
+}
+@media (min-width: 620px) {
+  .compare-row { grid-template-columns: 150px 1fr 1fr; align-items: baseline; gap: 12px; }
+}
+.compare-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.compare-cell { word-break: break-word; }
+.compare-tag {
+  display: inline-block; margin-right: 6px;
+  font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.compare-changed { border-color: var(--red); background: var(--red-bg); }
+.compare-changed .compare-label { color: var(--red); }
+
 /* What the request actually asks for, above the two buttons that answer it. */
 .detail-ask {
   flex-basis: 100%;

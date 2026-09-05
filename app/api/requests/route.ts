@@ -81,23 +81,15 @@ export const POST = route(async (req: Request) => {
 
   let borrowerId: string;
   if (existing) {
+    // Deliberately NOT updated. This form is unauthenticated and the only
+    // thing it proves is that the sender knows a national ID, which is not a
+    // secret in Thailand. Writing the submitted phone number and ID
+    // photograph over the record would let anyone holding someone's ID number
+    // redirect that person's callbacks to themselves, in their name.
+    //
+    // Everything submitted is kept on the request instead (below), where a
+    // staff member sees it beside the record and decides.
     borrowerId = existing.borrowerId;
-    // Refresh the details they just gave us — a phone number that changed
-    // since last time matters, and re-consenting renews the record.
-    await db
-      .update(borrowers)
-      .set({
-        phone,
-        lineId: lineId || existing.lineId,
-        email: email || existing.email,
-        consentAcceptedAt: new Date(),
-        consentVersion: CONSENT_VERSION,
-        // The new card photo replaces the one on file: it is the copy that
-        // was just consented to, and the old one has no reason to be kept.
-        idCardPhotoId: idCardId,
-        ...(photoId ? { illnessPhotoId: photoId } : {}),
-      })
-      .where(eq(borrowers.borrowerId, borrowerId));
   } else {
     const [created] = await db
       .insert(borrowers)
@@ -130,7 +122,21 @@ export const POST = route(async (req: Request) => {
 
   const [created] = await db
     .insert(requests)
-    .values({ borrowerId, equipmentId, note: illnessDescription })
+    .values({
+      borrowerId,
+      equipmentId,
+      note: illnessDescription,
+      // What this submission said, and the consent that came with it.
+      contactName: `${firstName} ${lastName}`,
+      contactPhone: phone,
+      contactLineId: lineId,
+      contactEmail: email,
+      contactAddress: address,
+      idCardPhotoId: idCardId,
+      illnessPhotoId: photoId,
+      consentAcceptedAt: new Date(),
+      consentVersion: CONSENT_VERSION,
+    })
     .returning();
 
   await logAction({

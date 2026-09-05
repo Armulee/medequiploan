@@ -3,7 +3,7 @@ import type { Borrower, BorrowRequest, Equipment, LoanRecord } from './db/schema
 
 // Photo ids are turned into /api/files/... URLs so the client never sees a
 // storage location it could fetch without a session.
-const fileUrl = (id: string | null) => (id ? `/api/files/${id}` : '');
+export const fileUrl = (id: string | null) => (id ? `/api/files/${id}` : '');
 
 export function borrowerListView(b: Borrower) {
   return {

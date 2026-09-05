@@ -86,6 +86,29 @@ export type BorrowRequest = {
   equipment_name: string;
 };
 
+/** What a public request said about the sender, beside what is on file. */
+export type RequestContact = {
+  name: string;
+  phone: string;
+  line_id: string;
+  email: string;
+  address: string;
+};
+
+export type RequestDetailResponse = {
+  request: BorrowRequest & {
+    id_card_photo_url: string;
+    illness_photo_url: string;
+    consent_accepted_at: string | null;
+    consent_version: string | null;
+  };
+  submitted: RequestContact;
+  on_file: RequestContact;
+  /** Field keys where a non-empty submitted value disagrees with the record. */
+  differs: Array<keyof RequestContact>;
+  borrower_self_registered: boolean;
+};
+
 export type AuditEntry = {
   log_id: string;
   actor_user_id: string;

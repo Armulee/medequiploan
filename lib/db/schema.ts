@@ -107,6 +107,30 @@ export const requests = pgTable('requests', {
   approvedBy: varchar('approved_by', { length: 16 }),
   recordId: varchar('record_id', { length: 16 }),
   note: text('note').notNull().default(''),
+
+  /**
+   * What this submission actually said, kept on the request rather than
+   * written over the borrower.
+   *
+   * The public form used to update the borrower row whenever the national ID
+   * matched an existing one. Anyone who knew a person's ID — and in Thailand
+   * that is not a secret — could therefore change that person's phone number,
+   * LINE, email and ID photograph on file, in their name, without ever
+   * proving they were them. Staff would then ring the attacker back.
+   *
+   * So a request now carries its own copy. Staff see it beside what is on
+   * file, are told when the two differ, and decide whether to adopt it.
+   */
+  contactName: varchar('contact_name', { length: 256 }).notNull().default(''),
+  contactPhone: varchar('contact_phone', { length: 20 }).notNull().default(''),
+  contactLineId: varchar('contact_line_id', { length: 64 }).notNull().default(''),
+  contactEmail: varchar('contact_email', { length: 254 }).notNull().default(''),
+  contactAddress: text('contact_address').notNull().default(''),
+  /** The card photographed for THIS request — what staff check before approving. */
+  idCardPhotoId: varchar('id_card_photo_id', { length: 64 }),
+  illnessPhotoId: varchar('illness_photo_id', { length: 64 }),
+  consentAcceptedAt: timestamp('consent_accepted_at', { withTimezone: true }),
+  consentVersion: varchar('consent_version', { length: 16 }),
 });
 
 export const auditLog = pgTable('audit_log', {

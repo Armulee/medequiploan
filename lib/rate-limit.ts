@@ -14,10 +14,30 @@ import { ApiError } from './api';
 export type Rule = { limit: number; windowSeconds: number };
 
 export const RULES = {
-  /** Wrong passwords for one account. Guards a targeted guess at `admin`. */
-  loginPerUser: { limit: 5, windowSeconds: 15 * 60 },
+  /**
+   * Wrong passwords for one account FROM ONE ADDRESS.
+   *
+   * Keyed on the pair, not on the username alone. A username-only bucket is a
+   * denial of service handed to anyone who can guess a username: five wrong
+   * passwords against `admin` every fifteen minutes, from a script, and the
+   * real admin can never sign in again. Usernames here are guessable by
+   * design — the seed creates `admin` and `staff`.
+   *
+   * The pair still stops the attack the bucket is for, because guessing a
+   * password needs thousands of attempts and an attacker changing address
+   * every five tries is caught by the per-address bucket below.
+   */
+  loginPerUserIp: { limit: 5, windowSeconds: 15 * 60 },
   /** Wrong passwords from one address, whichever accounts they were aimed at. */
   loginPerIp: { limit: 20, windowSeconds: 15 * 60 },
+  /**
+   * Wrong passwords against one account from every address at once.
+   *
+   * Deliberately far above the per-pair limit: this is the backstop for a
+   * distributed guess at a single account, and it is high enough that no
+   * plausible number of real people mistyping their own password reaches it.
+   */
+  loginPerUserGlobal: { limit: 100, windowSeconds: 60 * 60 },
   /** Public borrow requests, which create borrower rows and upload photos. */
   publicRequestPerIp: { limit: 5, windowSeconds: 60 * 60 },
   /**

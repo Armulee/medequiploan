@@ -7,20 +7,22 @@ import { statusBadgeClass } from '@/app/lib/format';
 import BackLink from './BackLink';
 import BorrowerDetail from './BorrowerDetail';
 import DecisionDialog, { type Decision } from './DecisionDialog';
-import type { BorrowRequest } from '@/app/lib/types';
+import RequestSubmission from './RequestSubmission';
+import type { RequestDetailResponse } from '@/app/lib/types';
 
 /**
  * One request, decided from the borrower's own page: what they asked for, who
  * they are, and everything they have borrowed before, all on one screen.
  */
 export default function RequestDetail({ requestId }: { requestId: string }) {
-  const [request, setRequest] = useState<BorrowRequest | null>(null);
+  const [detail, setDetail] = useState<RequestDetailResponse | null>(null);
   const [failed, setFailed] = useState(false);
   const [decision, setDecision] = useState<Decision | null>(null);
+  const [borrowerKey, setBorrowerKey] = useState(0);
 
   const load = useCallback(() => {
-    api<{ request: BorrowRequest }>(`/api/requests/${requestId}`)
-      .then((d) => setRequest(d.request))
+    api<RequestDetailResponse>(`/api/requests/${requestId}`)
+      .then(setDetail)
       .catch((e) => {
         setFailed(true);
         toast.error(e instanceof Error ? e.message : 'โหลดคำขอไม่สำเร็จ');
@@ -29,7 +31,9 @@ export default function RequestDetail({ requestId }: { requestId: string }) {
 
   useEffect(load, [load]);
 
-  if (failed || !request) {
+  const request = detail?.request ?? null;
+
+  if (failed || !detail || !request) {
     return (
       <>
         <BackLink href="/staff/requests" />
@@ -49,6 +53,16 @@ export default function RequestDetail({ requestId }: { requestId: string }) {
         backHref="/staff/requests"
         backLabel="กลับไปที่คำขอ"
         requestStatus={request.status}
+        refreshKey={borrowerKey}
+        extra={
+          <RequestSubmission
+            detail={detail}
+            onAdopted={() => {
+              load();
+              setBorrowerKey((k) => k + 1);
+            }}
+          />
+        }
         actions={
           pending ? (
             <>

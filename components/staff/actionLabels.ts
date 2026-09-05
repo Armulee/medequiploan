@@ -19,6 +19,7 @@ export const ACTION_LABELS: Record<string, string> = {
   update_user: 'แก้ไขบัญชีเจ้าหน้าที่',
   deactivate_user: 'ปิดใช้งานบัญชี',
   update_own_account: 'แก้ไขบัญชีตัวเอง',
+  adopt_request_contact: 'อัปเดตข้อมูลผู้ยืมจากคำขอ',
 };
 
 export const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;

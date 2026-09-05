@@ -17,17 +17,27 @@ export const POST = route(async (req: Request) => {
   void sweepExpired();
 
   const ip = clientIp(req);
-  const userKey = `login:user:${username.toLowerCase()}`;
+  const name = username.toLowerCase();
+  // Keyed on the pair. A username-only bucket let anyone lock the real admin
+  // out for as long as they cared to keep a script running.
+  const pairKey = `login:pair:${name}:${ip}`;
   const ipKey = `login:ip:${ip}`;
+  const userKey = `login:user:${name}`;
 
-  // Check both buckets before touching the password. Per-account stops a
-  // targeted guess at one login; per-address stops the same client spraying
-  // many usernames, which the per-account limit alone would never see.
-  const [byUser, byIp] = await Promise.all([hit(userKey, RULES.loginPerUser), hit(ipKey, RULES.loginPerIp)]);
-  if (!byUser.allowed || !byIp.allowed) {
+  // Three buckets: this client against this account, this client against
+  // every account, and every client against this account. The last is the
+  // backstop for a distributed guess and is set high enough that real people
+  // mistyping their own password never reach it.
+  const [byPair, byIp, byUser] = await Promise.all([
+    hit(pairKey, RULES.loginPerUserIp),
+    hit(ipKey, RULES.loginPerIp),
+    hit(userKey, RULES.loginPerUserGlobal),
+  ]);
+  if (!byPair.allowed || !byIp.allowed || !byUser.allowed) {
     const retryAfter = Math.max(
-      byUser.allowed ? 0 : byUser.retryAfterSeconds,
-      byIp.allowed ? 0 : byIp.retryAfterSeconds
+      byPair.allowed ? 0 : byPair.retryAfterSeconds,
+      byIp.allowed ? 0 : byIp.retryAfterSeconds,
+      byUser.allowed ? 0 : byUser.retryAfterSeconds
     );
     await logAction({
       actor: null,
@@ -58,10 +68,10 @@ export const POST = route(async (req: Request) => {
 
   await saveSession(user, found.sessionVersion);
 
-  // Only failures should count towards the limit, so clear both buckets on a
+  // Only failures should count towards the limit, so clear the buckets on a
   // success. Otherwise staff who sign in and out through the day would lock
   // themselves out without ever typing a wrong password.
-  await Promise.all([reset(userKey), reset(ipKey)]);
+  await Promise.all([reset(pairKey), reset(ipKey), reset(userKey)]);
 
   await logAction({ actor: user, action: 'login', targetType: 'user', targetId: user.user_id });
   return json({ user });
