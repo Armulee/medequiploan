@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
 import BackLink from './BackLink';
-import type { BorrowerFull, LoanRecord } from '@/app/lib/types';
+import { ListCount, ListMore, PAGE_SIZE, useInfiniteList } from './InfiniteList';
+import type { BorrowerFull, LoanRecord, OnTimeRate } from '@/app/lib/types';
 
 /**
  * Everything held about one borrower, opened from anywhere their name appears.
@@ -34,7 +35,7 @@ export default function BorrowerDetail({
   onLoaded?: (borrower: BorrowerFull) => void;
 }) {
   const [borrower, setBorrower] = useState<BorrowerFull | null>(null);
-  const [records, setRecords] = useState<LoanRecord[] | null>(null);
+  const [rate, setRate] = useState<OnTimeRate | null>(null);
   const [failed, setFailed] = useState(false);
 
   // Held in a ref so an inline arrow from the parent does not re-run the fetch
@@ -43,19 +44,33 @@ export default function BorrowerDetail({
   loaded.current = onLoaded;
 
   useEffect(() => {
-    api<{ borrower: BorrowerFull }>(`/api/borrowers/${borrowerId}`)
+    api<{ borrower: BorrowerFull; on_time: OnTimeRate }>(`/api/borrowers/${borrowerId}`)
       .then((d) => {
         setBorrower(d.borrower);
+        setRate(d.on_time);
         loaded.current?.(d.borrower);
       })
       .catch((e) => {
         setFailed(true);
         toast.error(e instanceof Error ? e.message : 'โหลดข้อมูลผู้ยืมไม่สำเร็จ');
       });
-    api<{ records: LoanRecord[] }>(`/api/records?borrower_id=${encodeURIComponent(borrowerId)}`)
-      .then((d) => setRecords(d.records))
-      .catch(() => setRecords([]));
   }, [borrowerId, refreshKey]);
+
+  // The list below is paged; the rate above it is counted by the server over
+  // every closed loan, so scrolling does not change it.
+  const fetchPage = useCallback(
+    async (offset: number, limit: number) => {
+      const d = await api<{ records: LoanRecord[]; total: number }>(
+        `/api/records?borrower_id=${encodeURIComponent(borrowerId)}&limit=${limit}&offset=${offset}`
+      );
+      return { items: d.records, total: d.total };
+    },
+    // refreshKey: lending from this page adds a row to the list below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [borrowerId, refreshKey]
+  );
+
+  const { items: records, total, loadingMore, sentinelRef } = useInfiniteList(fetchPage, PAGE_SIZE);
 
   if (failed) {
     return (
@@ -78,9 +93,6 @@ export default function BorrowerDetail({
       </>
     );
   }
-
-  const judged = (records ?? []).filter((r) => r.return_date && r.due_date);
-  const onTime = judged.filter((r) => new Date(r.return_date!) <= new Date(r.due_date!)).length;
 
   return (
     <>
@@ -183,12 +195,13 @@ export default function BorrowerDetail({
           <div className="empty-state">ยังไม่มีประวัติการยืม</div>
         ) : (
           <>
-            {judged.length > 0 && (
+            {rate && rate.judged > 0 && (
               <div className="stat-inline">
-                คืนตรงเวลา <strong>{Math.round((onTime / judged.length) * 100)}%</strong> ({onTime}/
-                {judged.length} รายการที่มีกำหนดคืน)
+                คืนตรงเวลา <strong>{Math.round((rate.on_time / rate.judged) * 100)}%</strong> (
+                {rate.on_time}/{rate.judged} รายการที่มีกำหนดคืน)
               </div>
             )}
+            <ListCount shown={records.length} total={total} />
             <div className="list">
               {records.map((r) => (
                 <Link className="list-row clickable" key={r.record_id} href={`/staff/records/${r.record_id}`}>
@@ -204,6 +217,12 @@ export default function BorrowerDetail({
                 </Link>
               ))}
             </div>
+            <ListMore
+              sentinelRef={sentinelRef}
+              loading={loadingMore}
+              shown={records.length}
+              total={total}
+            />
           </>
         )}
       </div>

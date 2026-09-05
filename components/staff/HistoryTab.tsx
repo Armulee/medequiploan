@@ -3,13 +3,20 @@
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
 import { actionLabel } from './actionLabels';
 import BorrowerSearch from './BorrowerSearch';
-import type { AuditEntry, BorrowerListItem, Equipment, LoanRecord } from '@/app/lib/types';
+import { ListCount, ListMore, PAGE_SIZE, useInfiniteList } from './InfiniteList';
+import type {
+  AuditEntry,
+  BorrowerListItem,
+  Equipment,
+  LoanRecord,
+  OnTimeRate,
+} from '@/app/lib/types';
 
 const SUBS = ['borrower', 'equipment', 'audit'] as const;
 type SubTab = (typeof SUBS)[number];
@@ -61,11 +68,32 @@ export default function HistoryTab({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
-function RecordList({ records }: { records: LoanRecord[] }) {
-  if (records.length === 0) return <div className="empty-state">ยังไม่มีประวัติการยืม</div>;
+/**
+ * The loan rows for one borrower or one item. Paged rather than handed an
+ * array: a wheelchair lent out weekly for five years is a long list, and only
+ * the first screen of it is ever read.
+ */
+function RecordList({ query }: { query: string }) {
+  const fetchPage = useCallback(
+    async (offset: number, limit: number) => {
+      const d = await api<{ records: LoanRecord[]; total: number }>(
+        `/api/records?${query}&limit=${limit}&offset=${offset}`
+      );
+      return { items: d.records, total: d.total };
+    },
+    [query]
+  );
+
+  const { items, total, loadingMore, sentinelRef } = useInfiniteList(fetchPage, PAGE_SIZE);
+
+  if (items === null) return <div className="empty-state">กำลังโหลด...</div>;
+  if (items.length === 0) return <div className="empty-state">ยังไม่มีประวัติการยืม</div>;
+
   return (
+    <>
+    <ListCount shown={items.length} total={total} />
     <div className="list">
-      {records.map((r) => (
+      {items.map((r) => (
         <Link
           className="list-row clickable"
           key={r.record_id}
@@ -86,29 +114,26 @@ function RecordList({ records }: { records: LoanRecord[] }) {
         </Link>
       ))}
     </div>
+    <ListMore sentinelRef={sentinelRef} loading={loadingMore} shown={items.length} total={total} />
+    </>
   );
 }
 
 function BorrowerHistory() {
   const [picked, setPicked] = useState<BorrowerListItem | null>(null);
-  const [records, setRecords] = useState<LoanRecord[] | null>(null);
+  const [rate, setRate] = useState<OnTimeRate | null>(null);
 
+  // Counted by the server over every closed loan — the list below is paged,
+  // so a rate computed from what is on screen would drift as you scrolled.
   useEffect(() => {
     if (!picked) return;
-    setRecords(null);
-    api<{ records: LoanRecord[] }>(`/api/records?borrower_id=${encodeURIComponent(picked.borrower_id)}`)
-      .then((d) => setRecords(d.records))
-      .catch((e) => {
-        setRecords([]);
-        toast.error(e instanceof Error ? e.message : 'โหลดประวัติไม่สำเร็จ');
-      });
+    setRate(null);
+    api<{ on_time: OnTimeRate }>(`/api/borrowers/${picked.borrower_id}`)
+      .then((d) => setRate(d.on_time))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดสถิติผู้ยืมไม่สำเร็จ'));
   }, [picked]);
 
-  // Only loans that had a due date can be judged on-time, so the rate is
-  // computed over those rather than over every returned loan.
-  const judged = (records ?? []).filter((r) => r.return_date && r.due_date);
-  const onTime = judged.filter((r) => new Date(r.return_date!) <= new Date(r.due_date!)).length;
-  const pct = judged.length ? Math.round((onTime / judged.length) * 100) : null;
+  const pct = rate && rate.judged ? Math.round((rate.on_time / rate.judged) * 100) : null;
 
   return (
     <>
@@ -133,17 +158,16 @@ function BorrowerHistory() {
         <BorrowerSearch onPick={setPicked} />
       )}
 
-      {picked && records !== null && (
+      {picked && (
         <>
-          {pct !== null && (
+          {pct !== null && rate && (
             <div className="stat-inline">
-              คืนตรงเวลา <strong>{pct}%</strong> ({onTime}/{judged.length} รายการที่มีกำหนดคืน)
+              คืนตรงเวลา <strong>{pct}%</strong> ({rate.on_time}/{rate.judged} รายการที่มีกำหนดคืน)
             </div>
           )}
-          <RecordList records={records} />
+          <RecordList query={`borrower_id=${encodeURIComponent(picked.borrower_id)}`} />
         </>
       )}
-      {picked && records === null && <div className="empty-state">กำลังโหลด...</div>}
     </>
   );
 }
@@ -151,24 +175,12 @@ function BorrowerHistory() {
 function EquipmentHistory() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [selected, setSelected] = useState<Equipment | null>(null);
-  const [records, setRecords] = useState<LoanRecord[] | null>(null);
 
   useEffect(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
       .then((d) => setEquipment(d.equipment))
       .catch((e) => toast.error(e instanceof Error ? e.message : 'โหลดรายการอุปกรณ์ไม่สำเร็จ'));
   }, []);
-
-  useEffect(() => {
-    if (!selected) return;
-    setRecords(null);
-    api<{ records: LoanRecord[] }>(`/api/records?equipment_id=${encodeURIComponent(selected.equipment_id)}`)
-      .then((d) => setRecords(d.records))
-      .catch((e) => {
-        setRecords([]);
-        toast.error(e instanceof Error ? e.message : 'โหลดประวัติไม่สำเร็จ');
-      });
-  }, [selected]);
 
   return (
     <>
@@ -190,34 +202,31 @@ function EquipmentHistory() {
         </select>
       </div>
 
-      {selected &&
-        (records === null ? (
-          <div className="empty-state">กำลังโหลด...</div>
-        ) : (
-          <RecordList records={records} />
-        ))}
+      {selected && (
+        <RecordList query={`equipment_id=${encodeURIComponent(selected.equipment_id)}`} />
+      )}
     </>
   );
 }
 
 function AuditLog() {
-  const [entries, setEntries] = useState<AuditEntry[] | null>(null);
-
-  useEffect(() => {
-    api<{ audit_log: AuditEntry[] }>('/api/audit-log?limit=200')
-      .then((d) => setEntries(d.audit_log))
-      .catch((e) => {
-        setEntries([]);
-        toast.error(e instanceof Error ? e.message : 'โหลด audit log ไม่สำเร็จ');
-      });
+  const fetchPage = useCallback(async (offset: number, limit: number) => {
+    const d = await api<{ audit_log: AuditEntry[]; total: number }>(
+      `/api/audit-log?limit=${limit}&offset=${offset}`
+    );
+    return { items: d.audit_log, total: d.total };
   }, []);
 
-  if (entries === null) return <div className="empty-state">กำลังโหลด...</div>;
-  if (entries.length === 0) return <div className="empty-state">ยังไม่มีประวัติการกระทำ</div>;
+  const { items, total, loadingMore, sentinelRef } = useInfiniteList(fetchPage, PAGE_SIZE);
+
+  if (items === null) return <div className="empty-state">กำลังโหลด...</div>;
+  if (items.length === 0) return <div className="empty-state">ยังไม่มีประวัติการกระทำ</div>;
 
   return (
+    <>
+    <ListCount shown={items.length} total={total} />
     <div className="list">
-      {entries.map((l) => (
+      {items.map((l) => (
         <Link className="list-row clickable" key={l.log_id} href={`/staff/audit/${l.log_id}`}>
           <div>
             <div className="title">{actionLabel(l.action)}</div>
@@ -230,5 +239,7 @@ function AuditLog() {
         </Link>
       ))}
     </div>
+    <ListMore sentinelRef={sentinelRef} loading={loadingMore} shown={items.length} total={total} />
+    </>
   );
 }

@@ -25,8 +25,11 @@ export const GET = route(async (req: Request) => {
   const sort = sp.get('sort') === 'name' ? users.name : users.createdAt;
   const dir = sp.get('order') === 'asc' ? asc : desc;
 
-  const rows = await db.select().from(users).orderBy(dir(sort));
-  return json({ users: rows.map(userView) });
+  // Not paged: a foundation has a handful of staff accounts, and the page
+  // filters and sorts them in the browser. The count still ships so the list
+  // header reads the same as every other list.
+  const rows = await db.select().from(users).orderBy(dir(sort), desc(users.userId));
+  return json({ users: rows.map(userView), total: rows.length });
 });
 
 export const POST = route(async (req: Request) => {

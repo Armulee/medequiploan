@@ -32,6 +32,28 @@ export function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
 }
 
+/** What one page of a list looks like on the wire. */
+export type Page = { limit: number; offset: number };
+
+/**
+ * Read ?limit and ?offset for a list endpoint.
+ *
+ * Returns null when no limit was asked for, and the caller then answers with
+ * the whole list: the equipment selects, the public landing page and the
+ * dashboard all read these endpoints and want everything. Only the staff
+ * lists page, and they always send a limit.
+ */
+export function pageParams(sp: URLSearchParams, max = 100): Page | null {
+  const raw = sp.get('limit');
+  if (raw === null) return null;
+
+  const asked = Number.parseInt(raw, 10);
+  const limit = Number.isFinite(asked) && asked > 0 ? Math.min(asked, max) : 20;
+  const offsetAsked = Number.parseInt(sp.get('offset') ?? '0', 10);
+  const offset = Number.isFinite(offsetAsked) && offsetAsked > 0 ? offsetAsked : 0;
+  return { limit, offset };
+}
+
 export function errorResponse(err: unknown) {
   if (err instanceof ApiError) {
     const headers = err.retryAfterSeconds

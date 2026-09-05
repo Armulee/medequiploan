@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
+import { ListCount } from './InfiniteList';
 import MonthlyChart from './MonthlyChart';
 
 type Dashboard = {
@@ -111,6 +112,10 @@ export default function DashboardTab() {
         {data.overdue.length === 0 ? (
           <div className="empty-state">ไม่มีรายการเกินกำหนด</div>
         ) : (
+          <>
+          {/* Deliberately the ten most overdue rather than a paged list — this
+              is a summary, and the whole queue is one tap away. */}
+          <ListCount shown={data.overdue.length} total={s.overdue_loans} />
           <div className="list">
             {data.overdue.map((o) => (
               <Link
@@ -128,6 +133,12 @@ export default function DashboardTab() {
               </Link>
             ))}
           </div>
+          {data.overdue.length < s.overdue_loans && (
+            <div className="list-more">
+              <Link href="/staff/returns?filter=overdue">ดูรายการเกินกำหนดทั้งหมด</Link>
+            </div>
+          )}
+          </>
         )}
       </div>
 
@@ -136,6 +147,8 @@ export default function DashboardTab() {
         {data.low_stock.length === 0 ? (
           <div className="empty-state">สต็อกทุกรายการอยู่ในเกณฑ์ปกติ</div>
         ) : (
+          <>
+          <ListCount shown={data.low_stock.length} total={s.low_stock_items} />
           <div className="list">
             {data.low_stock.map((e) => (
               <div className="list-row" key={e.equipment_id}>
@@ -149,6 +162,12 @@ export default function DashboardTab() {
               </div>
             ))}
           </div>
+          {data.low_stock.length < s.low_stock_items && (
+            <div className="list-more">
+              <Link href="/staff/stock?low=1">ดูอุปกรณ์ใกล้หมดทั้งหมด</Link>
+            </div>
+          )}
+          </>
         )}
       </div>
     </>

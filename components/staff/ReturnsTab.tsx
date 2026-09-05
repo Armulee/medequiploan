@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDate } from '@/app/lib/format';
+import { ListCount, ListMore, PAGE_SIZE, useInfiniteList } from './InfiniteList';
 import type { LoanRecord } from '@/app/lib/types';
 
 /**
@@ -19,23 +20,27 @@ import type { LoanRecord } from '@/app/lib/types';
 export default function ReturnsTab() {
   // ?filter=overdue is what the dashboard's "เกินกำหนดคืน" tile links to.
   const initialFilter = useSearchParams().get('filter');
-  const [active, setActive] = useState<LoanRecord[] | null>(null);
   const [onlyOverdue, setOnlyOverdue] = useState(initialFilter === 'overdue');
   const [returning, setReturning] = useState<LoanRecord | null>(null);
 
-  const load = useCallback(() => {
-    api<{ records: LoanRecord[] }>('/api/records')
-      .then((d) => setActive(d.records.filter((r) => r.status !== 'คืนแล้ว')))
-      .catch((e) => {
-        setActive([]);
-        toast.error(e instanceof Error ? e.message : 'โหลดรายการยืมไม่สำเร็จ');
+  // "Still out" and "overdue" are both computed from the due date at read
+  // time, so the server decides them; the page asks for the one it wants
+  // rather than downloading every loan ever made and filtering the array.
+  const fetchPage = useCallback(
+    async (offset: number, limit: number) => {
+      const qs = new URLSearchParams({
+        status: onlyOverdue ? 'เกินกำหนด' : 'active',
+        limit: String(limit),
+        offset: String(offset),
       });
-  }, []);
+      const d = await api<{ records: LoanRecord[]; total: number }>(`/api/records?${qs}`);
+      return { items: d.records, total: d.total };
+    },
+    [onlyOverdue]
+  );
 
-  useEffect(load, [load]);
-
-  const shown = (active ?? []).filter((r) => !onlyOverdue || r.status === 'เกินกำหนด');
-  const overdueCount = (active ?? []).filter((r) => r.status === 'เกินกำหนด').length;
+  const { items, total, loadingMore, sentinelRef, reload } = useInfiniteList(fetchPage, PAGE_SIZE);
+  const shown = items ?? [];
 
   return (
     <>
@@ -53,7 +58,7 @@ export default function ReturnsTab() {
               className={`btn btn-sm ${onlyOverdue ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setOnlyOverdue(true)}
             >
-              เกินกำหนด{overdueCount > 0 ? ` (${overdueCount})` : ''}
+              เกินกำหนด
             </button>
           </div>
         </div>
@@ -63,13 +68,15 @@ export default function ReturnsTab() {
           <Link href="/staff/lend">จ่ายอุปกรณ์ให้ผู้ยืม</Link>
         </p>
 
-        {active === null ? (
+        {items === null ? (
           <div className="empty-state">กำลังโหลด...</div>
         ) : shown.length === 0 ? (
           <div className="empty-state">
             {onlyOverdue ? 'ไม่มีรายการเกินกำหนด' : 'ไม่มีอุปกรณ์ที่ยังไม่ได้คืน'}
           </div>
         ) : (
+          <>
+          <ListCount shown={shown.length} total={total} />
           <div className="list">
             {shown.map((r) => (
               <div className="list-row" key={r.record_id}>
@@ -93,6 +100,13 @@ export default function ReturnsTab() {
               </div>
             ))}
           </div>
+          <ListMore
+            sentinelRef={sentinelRef}
+            loading={loadingMore}
+            shown={shown.length}
+            total={total}
+          />
+          </>
         )}
       </div>
 
@@ -102,7 +116,7 @@ export default function ReturnsTab() {
           onClose={() => setReturning(null)}
           onDone={() => {
             setReturning(null);
-            load();
+            reload();
           }}
         />
       )}

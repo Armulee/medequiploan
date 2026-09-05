@@ -7,6 +7,7 @@ import { api, apiJson } from '@/app/lib/api';
 import { thDateTime } from '@/app/lib/format';
 import { actionLabel } from './actionLabels';
 import BackLink from './BackLink';
+import { ListCount, ListMore, PAGE_SIZE, useInfiniteList } from './InfiniteList';
 import type { AuditEntry, SessionUser, StaffUser } from '@/app/lib/types';
 
 /**
@@ -23,7 +24,6 @@ export default function UserDetail({
 }) {
   const [user, setUser] = useState<StaffUser | null>(null);
   const [failed, setFailed] = useState(false);
-  const [activity, setActivity] = useState<AuditEntry[] | null>(null);
   const [confirmOff, setConfirmOff] = useState(false);
 
   const load = useCallback(() => {
@@ -37,14 +37,23 @@ export default function UserDetail({
 
   useEffect(load, [load]);
 
-  useEffect(() => {
-    // Admin-only, exactly like the Audit Log tab: staff never see this page.
-    api<{ audit_log: AuditEntry[] }>(
-      `/api/audit-log?limit=50&actor_user_id=${encodeURIComponent(userId)}`
-    )
-      .then((d) => setActivity(d.audit_log))
-      .catch(() => setActivity([]));
-  }, [userId]);
+  // Admin-only, exactly like the Audit Log tab: staff never see this page.
+  const fetchActivity = useCallback(
+    async (offset: number, limit: number) => {
+      const d = await api<{ audit_log: AuditEntry[]; total: number }>(
+        `/api/audit-log?actor_user_id=${encodeURIComponent(userId)}&limit=${limit}&offset=${offset}`
+      );
+      return { items: d.audit_log, total: d.total };
+    },
+    [userId]
+  );
+
+  const {
+    items: activity,
+    total: activityTotal,
+    loadingMore,
+    sentinelRef,
+  } = useInfiniteList(fetchActivity, PAGE_SIZE);
 
   async function setActive(active: boolean) {
     try {
@@ -135,6 +144,8 @@ export default function UserDetail({
         ) : activity.length === 0 ? (
           <div className="empty-state">ยังไม่มีการกระทำที่บันทึกไว้</div>
         ) : (
+          <>
+          <ListCount shown={activity.length} total={activityTotal} />
           <div className="list">
             {activity.map((l) => (
               <div className="list-row" key={l.log_id}>
@@ -148,6 +159,13 @@ export default function UserDetail({
               </div>
             ))}
           </div>
+          <ListMore
+            sentinelRef={sentinelRef}
+            loading={loadingMore}
+            shown={activity.length}
+            total={activityTotal}
+          />
+          </>
         )}
       </div>
 

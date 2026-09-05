@@ -3,11 +3,11 @@
 import { Phone } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useState } from 'react';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDateTime } from '@/app/lib/format';
 import DecisionDialog, { type Decision } from './DecisionDialog';
+import { ListCount, ListMore, PAGE_SIZE, useInfiniteList } from './InfiniteList';
 import type { BorrowRequest } from '@/app/lib/types';
 
 const FILTERS = ['รอดำเนินการ', 'อนุมัติ', 'ปฏิเสธ', 'ทั้งหมด'] as const;
@@ -20,21 +20,19 @@ function isFilter(v: string | null): v is Filter {
 export default function RequestsTab() {
   const fromUrl = useSearchParams().get('status');
   const [filter, setFilter] = useState<Filter>(isFilter(fromUrl) ? fromUrl : 'รอดำเนินการ');
-  const [items, setItems] = useState<BorrowRequest[] | null>(null);
   const [decision, setDecision] = useState<Decision | null>(null);
 
-  const load = useCallback(() => {
-    const qs = filter === 'ทั้งหมด' ? '' : `?status=${encodeURIComponent(filter)}`;
-    setItems(null);
-    api<{ requests: BorrowRequest[] }>(`/api/requests${qs}`)
-      .then((d) => setItems(d.requests))
-      .catch((e) => {
-        toast.error(e instanceof Error ? e.message : 'โหลดคำขอไม่สำเร็จ');
-        setItems([]);
-      });
-  }, [filter]);
+  const fetchPage = useCallback(
+    async (offset: number, limit: number) => {
+      const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+      if (filter !== 'ทั้งหมด') qs.set('status', filter);
+      const d = await api<{ requests: BorrowRequest[]; total: number }>(`/api/requests?${qs}`);
+      return { items: d.requests, total: d.total };
+    },
+    [filter]
+  );
 
-  useEffect(load, [load]);
+  const { items, total, loadingMore, sentinelRef, reload } = useInfiniteList(fetchPage, PAGE_SIZE);
 
   return (
     <div className="card">
@@ -57,6 +55,8 @@ export default function RequestsTab() {
       ) : items.length === 0 ? (
         <div className="empty-state">ไม่มีคำขอในหมวดนี้</div>
       ) : (
+        <>
+        <ListCount shown={items.length} total={total} noun="คำขอ" />
         <div className="list">
           {items.map((r) => (
             <div className="list-row" key={r.request_id}>
@@ -103,6 +103,13 @@ export default function RequestsTab() {
             </div>
           ))}
         </div>
+        <ListMore
+          sentinelRef={sentinelRef}
+          loading={loadingMore}
+          shown={items.length}
+          total={total}
+        />
+        </>
       )}
 
       {decision && (
@@ -111,7 +118,7 @@ export default function RequestsTab() {
           onClose={() => setDecision(null)}
           onDone={() => {
             setDecision(null);
-            load();
+            reload();
           }}
         />
       )}

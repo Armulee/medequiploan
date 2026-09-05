@@ -1,7 +1,7 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers, equipment, requests } from '@/lib/db/schema';
-import { ApiError, json, requireAuth, route } from '@/lib/api';
+import { ApiError, json, pageParams, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
@@ -140,9 +140,14 @@ export const POST = route(async (req: Request) => {
 // STAFF: the approval queue.
 export const GET = route(async (req: Request) => {
   await requireAuth();
-  const status = new URL(req.url).searchParams.get('status');
+  const sp = new URL(req.url).searchParams;
+  const status = sp.get('status');
+  // Filtered in SQL rather than over the mapped array, so a page of twenty is
+  // twenty matching requests and the count beside them is the whole queue.
+  const where = status ? eq(requests.status, status) : undefined;
 
-  const rows = await db
+  const page = pageParams(sp);
+  const query = db
     .select({
       request: requests,
       borrowerFirst: borrowers.firstName,
@@ -154,9 +159,13 @@ export const GET = route(async (req: Request) => {
     .from(requests)
     .leftJoin(borrowers, eq(requests.borrowerId, borrowers.borrowerId))
     .leftJoin(equipment, eq(requests.equipmentId, equipment.equipmentId))
-    .orderBy(desc(requests.requestedAt));
+    .where(where)
+    .orderBy(desc(requests.requestedAt), desc(requests.requestId))
+    .$dynamic();
 
-  let list = rows.map((r) => ({
+  const rows = await (page ? query.limit(page.limit).offset(page.offset) : query);
+
+  const list = rows.map((r) => ({
     request_id: r.request.requestId,
     borrower_id: r.request.borrowerId,
     equipment_id: r.request.equipmentId,
@@ -171,6 +180,11 @@ export const GET = route(async (req: Request) => {
     equipment_name: r.equipmentName ?? r.request.equipmentId,
   }));
 
-  if (status) list = list.filter((r) => r.status === status);
-  return json({ requests: list });
+  const total = page
+    ? Number(
+        (await db.select({ n: sql<number>`count(*)::int` }).from(requests).where(where))[0]?.n ?? 0
+      )
+    : list.length;
+
+  return json({ requests: list, total });
 });

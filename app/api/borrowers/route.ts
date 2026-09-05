@@ -1,7 +1,7 @@
 import { desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { borrowers } from '@/lib/db/schema';
-import { ApiError, json, requireAuth, route } from '@/lib/api';
+import { ApiError, json, pageParams, requireAuth, route } from '@/lib/api';
 import { encrypt, nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId, normaliseEmail, normalisePhone } from '@/lib/validate';
 import { CONSENT_VERSION } from '@/lib/consent';
@@ -11,25 +11,36 @@ import { borrowerFullView, borrowerListView } from '@/lib/views';
 
 export const GET = route(async (req: Request) => {
   await requireAuth();
-  const q = (new URL(req.url).searchParams.get('q') ?? '').trim();
+  const sp = new URL(req.url).searchParams;
+  const q = (sp.get('q') ?? '').trim();
 
   // A national-id search is matched against the keyed hash, so it no longer
   // requires decrypting every borrower row to filter in memory.
-  const rows = q
-    ? await db
-        .select()
-        .from(borrowers)
-        .where(
-          or(
-            ilike(sql`${borrowers.firstName} || ' ' || ${borrowers.lastName}`, `%${q}%`),
-            eq(borrowers.nationalIdHash, /^\d{13}$/.test(q) ? nationalIdHash(q) : ''),
-            ilike(borrowers.phone, `%${q.replace(/[\s\-().]/g, '')}%`)
-          )
-        )
-        .orderBy(desc(borrowers.registeredAt))
-    : await db.select().from(borrowers).orderBy(desc(borrowers.registeredAt));
+  const where = q
+    ? or(
+        ilike(sql`${borrowers.firstName} || ' ' || ${borrowers.lastName}`, `%${q}%`),
+        eq(borrowers.nationalIdHash, /^\d{13}$/.test(q) ? nationalIdHash(q) : ''),
+        ilike(borrowers.phone, `%${q.replace(/[\s\-().]/g, '')}%`)
+      )
+    : undefined;
 
-  return json({ borrowers: rows.map(borrowerListView) });
+  const page = pageParams(sp);
+  const query = db
+    .select()
+    .from(borrowers)
+    .where(where)
+    .orderBy(desc(borrowers.registeredAt), desc(borrowers.borrowerId))
+    .$dynamic();
+
+  const rows = await (page ? query.limit(page.limit).offset(page.offset) : query);
+
+  const total = page
+    ? Number(
+        (await db.select({ n: sql<number>`count(*)::int` }).from(borrowers).where(where))[0]?.n ?? 0
+      )
+    : rows.length;
+
+  return json({ borrowers: rows.map(borrowerListView), total });
 });
 
 export const POST = route(async (req: Request) => {

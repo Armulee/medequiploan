@@ -683,6 +683,21 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 /* The React port uses a two-column row (detail left, action right) rather than
    the original stacked .list-item, so it needs its own rules — the classes
    below did not exist in the ported stylesheet. */
+/* How many rows this list has, sitting above the first one — a list that
+   stops at twenty is otherwise indistinguishable from a list of twenty. */
+.list-count {
+  font-size: 0.85rem; color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.list-count strong { color: var(--text); font-weight: 700; }
+/* The bottom of a paged list: also the element the observer watches, so it
+   keeps its height even when it has nothing to say. */
+.list-more {
+  min-height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; color: var(--text-muted);
+  padding-top: 10px;
+}
 .list { display: flex; flex-direction: column; gap: 10px; }
 .list-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;

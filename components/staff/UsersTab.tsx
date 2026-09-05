@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiJson } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
+import { ListCount, ListMore, PAGE_SIZE, useArrayPage, useInfiniteList } from './InfiniteList';
 import type { SessionUser, StaffUser } from '@/app/lib/types';
 
 type SortKey = 'created_desc' | 'created_asc' | 'name_asc';
@@ -55,6 +56,13 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
       return sort === 'created_asc' ? diff : -diff;
     });
   }, [users, search, from, to, sort]);
+
+  // Filtered and sorted here, rendered twenty at a time — a new filter is a
+  // new array, which sends the list back to its first page.
+  const { items: paged, total, loadingMore, sentinelRef } = useInfiniteList(
+    useArrayPage(shown),
+    PAGE_SIZE
+  );
 
   async function deactivate(u: StaffUser) {
     try {
@@ -122,13 +130,15 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
           </div>
         </div>
 
-        {shown === null ? (
+        {users === null ? (
           <div className="empty-state">กำลังโหลด...</div>
-        ) : shown.length === 0 ? (
+        ) : (shown ?? []).length === 0 ? (
           <div className="empty-state">ไม่พบเจ้าหน้าที่ตามเงื่อนไขที่เลือก</div>
         ) : (
+          <>
+          <ListCount shown={paged?.length ?? 0} total={total} noun="บัญชี" />
           <div className="list">
-            {shown.map((u) => (
+            {(paged ?? []).map((u) => (
               <div className="list-row" key={u.user_id}>
                 <div>
                   <div className="title">
@@ -172,6 +182,13 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
               </div>
             ))}
           </div>
+          <ListMore
+            sentinelRef={sentinelRef}
+            loading={loadingMore}
+            shown={paged?.length ?? 0}
+            total={total}
+          />
+          </>
         )}
       </div>
 

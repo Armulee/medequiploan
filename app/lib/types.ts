@@ -52,6 +52,9 @@ export type BorrowerFull = BorrowerListItem & {
   consent_version: string | null;
 };
 
+/** Counted in SQL over every closed loan, not over the page on screen. */
+export type OnTimeRate = { judged: number; on_time: number };
+
 export type LoanRecord = {
   record_id: string;
   borrower_id: string;

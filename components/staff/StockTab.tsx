@@ -1,11 +1,12 @@
 'use client';
 
 import { ImagePlus, Pencil, TriangleAlert } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiForm, apiJson } from '@/app/lib/api';
 import { formatBytes, resizeImage } from '@/app/lib/resize-image';
+import { ListCount, ListMore, PAGE_SIZE, useArrayPage, useInfiniteList } from './InfiniteList';
 import type { Equipment } from '@/app/lib/types';
 
 const REMOVE_REASONS = ['ชำรุด', 'สูญหาย', 'ส่งซ่อม', 'รับกลับจากซ่อม'] as const;
@@ -31,7 +32,16 @@ export default function StockTab({
 
   useEffect(load, [load]);
 
-  const shown = (items ?? []).filter((e) => !lowOnly || e.low_stock);
+  const shown = useMemo(
+    () => (items ?? []).filter((e) => !lowOnly || e.low_stock),
+    [items, lowOnly]
+  );
+  // The whole catalogue is small enough to filter in the browser; only the
+  // rendering is paged, like every other list here.
+  const { items: paged, total, loadingMore, sentinelRef } = useInfiniteList(
+    useArrayPage(shown),
+    PAGE_SIZE
+  );
 
   return (
     <>
@@ -77,8 +87,10 @@ export default function StockTab({
             {lowOnly ? 'ไม่มีอุปกรณ์ที่ใกล้หมด' : 'ยังไม่มีอุปกรณ์ในระบบ'}
           </div>
         ) : (
+          <>
+          <ListCount shown={paged?.length ?? 0} total={total} />
           <div className="list">
-            {shown.map((e) => (
+            {(paged ?? []).map((e) => (
               <div className="list-row" key={e.equipment_id}>
                 <div>
                   <div className="title">
@@ -122,6 +134,13 @@ export default function StockTab({
               </div>
             ))}
           </div>
+          <ListMore
+            sentinelRef={sentinelRef}
+            loading={loadingMore}
+            shown={paged?.length ?? 0}
+            total={total}
+          />
+          </>
         )}
       </div>
 
