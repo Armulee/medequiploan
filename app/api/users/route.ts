@@ -4,8 +4,8 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ApiError, json, requireRole, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
+import { passwordProblem } from '@/lib/password';
 
-const MIN_PASSWORD = 8;
 
 function userView(u: typeof users.$inferSelect) {
   // The password hash never leaves the server, not even to an admin.
@@ -45,9 +45,8 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('ชื่อผู้ใช้ต้องเป็นตัวอักษรอังกฤษพิมพ์เล็ก ตัวเลข . _ - ยาว 3-64 ตัว');
   }
   if (!name) throw new ApiError('กรุณากรอกชื่อ-นามสกุลของเจ้าหน้าที่');
-  if (password.length < MIN_PASSWORD) {
-    throw new ApiError(`รหัสผ่านต้องยาวอย่างน้อย ${MIN_PASSWORD} ตัวอักษร`);
-  }
+  const weak = passwordProblem(password, [username, name]);
+  if (weak) throw new ApiError(weak);
   if (role !== 'admin' && role !== 'staff') throw new ApiError('สิทธิ์ไม่ถูกต้อง');
 
   const [existing] = await db.select().from(users).where(eq(users.username, username));

@@ -3,7 +3,7 @@ import { drizzle as drizzleNeon, type NeonHttpDatabase } from 'drizzle-orm/neon-
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
-import { ConfigError } from '../api';
+import { ConfigError } from '../errors';
 
 // Vercel's Neon/Postgres integrations inject the connection string under
 // different names depending on which one the store was created from, so accept

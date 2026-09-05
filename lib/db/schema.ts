@@ -24,6 +24,12 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 16 }).notNull(), // 'admin' | 'staff'
   name: varchar('name', { length: 128 }).notNull(),
   active: boolean('active').notNull().default(true),
+  /**
+   * Bumped to invalidate every cookie already issued for this account —
+   * closing it, changing the password, or resetting the passkeys. Every
+   * authenticated request compares the cookie's copy against this.
+   */
+  sessionVersion: integer('session_version').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

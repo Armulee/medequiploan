@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ApiError, json, requireRole, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
+import { passwordProblem } from '@/lib/password';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -50,9 +51,13 @@ export const DELETE = route<Ctx>(async (_req, { params }) => {
     }
   }
 
+  // Bumping the version alongside `active` is what makes this take effect
+  // now: requireAuth compares the cookie's copy against the row, so any
+  // browser already signed in as this account is refused on its next request
+  // instead of carrying on for the rest of the eight-hour cookie.
   const [updated] = await db
     .update(users)
-    .set({ active: false })
+    .set({ active: false, sessionVersion: target.sessionVersion + 1 })
     .where(eq(users.userId, id))
     .returning();
 
@@ -99,12 +104,24 @@ export const PATCH = route<Ctx>(async (req, { params }) => {
   if (body.active !== undefined) {
     patch.active = Boolean(body.active);
     details.push(patch.active ? 'เปิดใช้งาน' : 'ปิดใช้งาน');
+    if (!patch.active) patch.sessionVersion = target.sessionVersion + 1;
   }
   if (body.password !== undefined) {
     const password = String(body.password);
-    if (password.length < 8) throw new ApiError('รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร');
+    const weak = passwordProblem(password, [target.username, target.name]);
+    if (weak) throw new ApiError(weak);
     patch.passwordHash = bcrypt.hashSync(password, 10);
     details.push('รีเซ็ตรหัสผ่าน');
+    // An admin resetting someone's password is either onboarding them or
+    // responding to a compromise; both mean the old sessions should end.
+    patch.sessionVersion = target.sessionVersion + 1;
+  }
+
+  // A demotion takes effect on the next request through the role read from the
+  // row, but an admin who is mid-action deserves to be pushed back to a fresh
+  // sign-in rather than silently losing buttons.
+  if (patch.role && patch.role !== target.role) {
+    patch.sessionVersion = target.sessionVersion + 1;
   }
 
   if (Object.keys(patch).length === 0) throw new ApiError('ไม่มีข้อมูลที่จะแก้ไข');

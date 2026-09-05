@@ -10,15 +10,21 @@ import './load-env';
 import bcrypt from 'bcryptjs';
 import { db } from '../lib/db';
 import { equipment, users } from '../lib/db/schema';
+import { MIN_PASSWORD } from '../lib/password';
 
 async function main() {
   const existingUsers = await db.select().from(users).limit(1);
   if (existingUsers.length === 0) {
     const adminPass = process.env.SEED_ADMIN_PASSWORD;
     const staffPass = process.env.SEED_STAFF_PASSWORD;
-    if (!adminPass || !staffPass || adminPass.length < 8 || staffPass.length < 8) {
+    if (
+      !adminPass ||
+      !staffPass ||
+      adminPass.length < MIN_PASSWORD ||
+      staffPass.length < MIN_PASSWORD
+    ) {
       throw new Error(
-        'ตั้ง SEED_ADMIN_PASSWORD และ SEED_STAFF_PASSWORD ใน .env ก่อน (อย่างน้อย 8 ตัวอักษร) ' +
+        `ตั้ง SEED_ADMIN_PASSWORD และ SEED_STAFF_PASSWORD ใน .env ก่อน (อย่างน้อย ${MIN_PASSWORD} ตัวอักษร) ` +
           'ระบบไม่มีรหัสผ่านเริ่มต้นให้แล้ว เพื่อไม่ให้มีบัญชีที่เดารหัสได้หลุดขึ้น production'
       );
     }

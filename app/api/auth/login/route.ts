@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ApiError, json, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
-import { getSession, type SessionUser } from '@/lib/session';
+import { saveSession, type SessionUser } from '@/lib/session';
 import { RULES, clientIp, hit, reset, sweepExpired, tooManyRequests } from '@/lib/rate-limit';
 
 export const POST = route(async (req: Request) => {
@@ -56,9 +56,7 @@ export const POST = route(async (req: Request) => {
     name: found.name,
   };
 
-  const session = await getSession();
-  session.user = user;
-  await session.save();
+  await saveSession(user, found.sessionVersion);
 
   // Only failures should count towards the limit, so clear both buckets on a
   // success. Otherwise staff who sign in and out through the day would lock

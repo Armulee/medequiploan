@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { ConfigError } from './api';
+import { ConfigError } from './errors';
 
 // AES-256-GCM for national ID numbers at rest.
 //

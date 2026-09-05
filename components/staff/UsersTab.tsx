@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
 import { api, apiJson } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
+import { MIN_PASSWORD, passwordProblem } from '@/lib/password';
 import { ListCount, ListMore, PAGE_SIZE, useArrayPage, useInfiniteList } from './InfiniteList';
 import type { SessionUser, StaffUser } from '@/app/lib/types';
 
@@ -242,7 +243,8 @@ function AddUserDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setInvalid('');
-    if (form.password.length < 8) return setInvalid('รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร');
+    const weak = passwordProblem(form.password, [form.username, form.name]);
+    if (weak) return setInvalid(weak);
     setBusy(true);
     try {
       await apiJson('/api/users', 'POST', form);
@@ -284,7 +286,8 @@ function AddUserDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
             required
           />
           <div className={invalid ? 'hint hint-error' : 'hint'}>
-            {invalid || 'อย่างน้อย 8 ตัวอักษร · แจ้งเจ้าหน้าที่ให้เปลี่ยนหลังเข้าใช้ครั้งแรก'}
+            {invalid ||
+              `อย่างน้อย ${MIN_PASSWORD} ตัวอักษร · เจ้าหน้าที่จะถูกบังคับให้สร้างพาสคีย์ตอนเข้าใช้ครั้งแรก`}
           </div>
         </div>
         <div className="field">

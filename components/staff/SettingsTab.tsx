@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { apiJson } from '@/app/lib/api';
 import { useSession } from '@/app/staff/SessionContext';
+import { MIN_PASSWORD } from '@/lib/password';
 import type { SessionUser } from '@/app/lib/types';
 
 /**
@@ -156,7 +157,7 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
               minLength={8}
               required
             />
-            <div className="hint">อย่างน้อย 8 ตัวอักษร</div>
+            <div className="hint">อย่างน้อย {MIN_PASSWORD} ตัวอักษร · ห้ามมีชื่อผู้ใช้อยู่ในนั้น</div>
           </div>
           <div className="field">
             <label htmlFor="acc_again">พิมพ์รหัสผ่านใหม่อีกครั้ง</label>

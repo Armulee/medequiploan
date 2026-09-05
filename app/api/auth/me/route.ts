@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
+import { passwordProblem } from '@/lib/password';
 import { RULES, hit } from '@/lib/rate-limit';
 import { currentUser, saveSession } from '@/lib/session';
 
@@ -68,12 +69,16 @@ export const PATCH = route(async (req) => {
 
   if (wantsPassword) {
     const password = String(body.password);
-    if (password.length < 8) throw new ApiError('รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร');
+    const weak = passwordProblem(password, [me.username, me.name]);
+    if (weak) throw new ApiError(weak);
     if (await bcrypt.compare(password, me.passwordHash)) {
       throw new ApiError('รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม');
     }
     patch.passwordHash = bcrypt.hashSync(password, 10);
     changed.push('รหัสผ่าน');
+    // A password is changed because the old one is no longer trusted, so
+    // every other session holding a cookie for this account ends here.
+    patch.sessionVersion = me.sessionVersion + 1;
   }
 
   if (changed.length === 0) throw new ApiError('ไม่มีข้อมูลที่เปลี่ยนแปลง');
@@ -85,14 +90,16 @@ export const PATCH = route(async (req) => {
     .returning();
 
   // The session carries the name and username, so it has to be rewritten or
-  // the header keeps showing the old ones until the next sign-in.
+  // the header keeps showing the old ones until the next sign-in. It also
+  // carries the version, which the password branch above may have moved —
+  // this browser keeps working, every other one does not.
   const nextUser = {
     user_id: updated.userId,
     username: updated.username,
     role: updated.role as 'admin' | 'staff',
     name: updated.name,
   };
-  await saveSession(nextUser);
+  await saveSession(nextUser, updated.sessionVersion);
 
   // The password itself is never logged, only that it changed.
   await logAction({

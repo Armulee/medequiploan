@@ -1,32 +1,11 @@
 import { NextResponse } from 'next/server';
-import { currentUser, type SessionUser } from './session';
+import { requireActiveUser } from './auth';
+import type { SessionUser } from './session';
+import { ApiError, ConfigError } from './errors';
 
-export class ApiError extends Error {
-  status: number;
-  /** Seconds until the caller may retry; sent as the Retry-After header. */
-  retryAfterSeconds?: number;
-  constructor(message: string, status = 400, retryAfterSeconds?: number) {
-    super(message);
-    this.status = status;
-    this.retryAfterSeconds = retryAfterSeconds;
-  }
-}
-
-/**
- * A required environment variable is missing or malformed.
- *
- * Separated from ApiError because it is an operator problem, not a caller
- * problem, and because hiding it behind the generic 500 made a misconfigured
- * deployment nearly impossible to diagnose from the outside — the symptom was
- * an unexplained 500 on the public form. The variable's name is safe to
- * surface; its value is never included.
- */
-export class ConfigError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ConfigError';
-  }
-}
+// Re-exported so the many `import { ApiError } from '@/lib/api'` call sites
+// keep working; the definitions live in ./errors to keep lib/db out of a cycle.
+export { ApiError, ConfigError };
 
 export function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
@@ -106,9 +85,7 @@ export function route<C>(handler: Handler<C>): Handler<C> {
 }
 
 export async function requireAuth(): Promise<SessionUser> {
-  const user = await currentUser();
-  if (!user) throw new ApiError('ต้องเข้าสู่ระบบก่อนใช้งานส่วนนี้ (login required)', 401);
-  return user;
+  return requireActiveUser();
 }
 
 export async function requireRole(...roles: Array<SessionUser['role']>): Promise<SessionUser> {
