@@ -137,6 +137,8 @@ npm run db:migrate        # รัน migration ที่ยังไม่ไ�
 # ไม่งั้นฐานข้อมูลที่ตั้งด้วยไฟล์นั้นจะไม่ตรงกับโค้ด · วิธีตรวจ: สร้างสองฐาน
 # ฐานหนึ่งรัน migrate อีกฐานรัน setup.sql แล้ว diff information_schema.columns กัน
 npm run seed              # สร้างผู้ใช้ + อุปกรณ์ตัวอย่าง (ต้องตั้ง SEED_*_PASSWORD ก่อน)
+npm run wipe-blob         # ลบรูปทั้งหมดใน Blob (ต้อง -- --yes ถึงจะลบจริง)
+# ล้างฐานข้อมูลก่อนส่งต่อโปรเจกต์: sql/reset.sql · วิธีส่งต่อทั้งหมด: HANDOVER.md
 npm run dev               # http://localhost:3000
 npm run build             # production build
 ```

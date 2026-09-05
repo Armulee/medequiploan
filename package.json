@@ -15,7 +15,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "retention:preview": "tsx scripts/retention.ts --dry",
-    "retention:run": "tsx scripts/retention.ts"
+    "retention:run": "tsx scripts/retention.ts",
+    "wipe-blob": "tsx scripts/wipe-blob.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {
