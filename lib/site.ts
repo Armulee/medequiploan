@@ -43,6 +43,14 @@ export const ORGANIZATION = {
   postalCode: '',
 } as const;
 
+/**
+ * The commit this bundle was built from, stamped into the page as a meta tag.
+ * "Is my change live yet?" is otherwise a guessing game played by comparing
+ * screenshots; with this it is one look at the page source. Vercel sets the
+ * variable at build time, so locally it reads "dev".
+ */
+export const BUILD = (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7);
+
 export const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/lib/site';
+import { BUILD, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/lib/site';
 import './globals.css';
 
 // Site-wide head only. The home page carries its own SEO, social and
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  other: { 'build-commit': BUILD },
   referrer: 'strict-origin-when-cross-origin',
   // Only the two that cause trouble: iOS turns addresses into Maps links and
   // mangles them. Phone numbers are left alone — the staff queue wants them tappable.
