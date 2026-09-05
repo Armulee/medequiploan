@@ -99,14 +99,13 @@ export default function LandingPage() {
         <div className="hero-scrim" />
         <div className="hero-inner">
           <div className="hero-copy">
-            <span className="hero-eyebrow">
-              <Icon name="check" size={14} strokeWidth={2.5} />
-              ยืมฟรี ไม่มีค่าใช้จ่าย
-            </span>
+            {/* "ฟรี" was a chip above the headline. In the headline it is
+                both louder and one line shorter — and on a phone that line
+                was what pushed the buttons onto the wheelchair. */}
             <h1>
-              ยืมกายอุปกรณ์การแพทย์
+              ยืมกายอุปกรณ์การแพทย์<span className="accent">ฟรี</span>
               <br className="hero-break" />
-              <span className="accent">ที่บ้านคุณ</span> ได้ง่าย ๆ
+              ที่บ้านคุณ ได้ง่าย ๆ
             </h1>
             <p className="lead">
               วีลแชร์ ไม้ค้ำยัน เตียงผู้ป่วย เครื่องผลิตออกซิเจน และอุปกรณ์อื่น ๆ
