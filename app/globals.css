@@ -407,7 +407,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 @media (max-width: 1023px) {
   .hero { justify-content: flex-start; }
   .hero-photo img { object-position: center 62%; }
-  .hero-inner { padding: 116px 20px 150px; }
+  .hero-inner { padding: 100px 20px 150px; }
   .hero-copy { max-width: none; position: relative; }
 
   /* The wash follows the WORDS, not a percentage of the viewport. Tuned to
@@ -447,7 +447,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
       rgba(255, 246, 240, 0) 100%
     );
   }
-  .hero-inner { padding: 124px 20px 150px; }
+  .hero-inner { padding: 106px 20px 150px; }
+  /* Tighter between the three blocks too — every pixel taken off the top of
+     the copy is a pixel between the buttons and the crutches. */
+  .hero h1 { margin-bottom: 12px; }
+  .hero p.lead { margin-bottom: 20px; }
   .lead-tail { display: none; }
 }
 
