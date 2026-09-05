@@ -45,28 +45,31 @@ export default function ReturnsTab() {
   return (
     <>
       <div className="card">
-        <div className="card-head">
-          <h1>บันทึกการคืน</h1>
-          <div className="filter-row" style={{ margin: 0 }}>
-            <button
-              className={`btn btn-sm ${onlyOverdue ? 'btn-outline' : 'btn-primary'}`}
-              onClick={() => setOnlyOverdue(false)}
-            >
-              ทั้งหมด
-            </button>
-            <button
-              className={`btn btn-sm ${onlyOverdue ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setOnlyOverdue(true)}
-            >
-              เกินกำหนด
-            </button>
-          </div>
-        </div>
-        <p style={{ color: 'var(--text-muted)', marginTop: -2 }}>
+        {/* Heading, then what the page is for, then the filter — the same
+            order as the lend page. With the filter beside the heading it
+            landed above the sentence explaining it once the card head
+            stacked on a phone. */}
+        <h1>บันทึกการคืน</h1>
+        <p style={{ color: 'var(--text-muted)', marginTop: -6 }}>
           อุปกรณ์ที่ยังอยู่กับผู้ยืม · กด “รับคืน” เมื่อของกลับเข้าศูนย์
           {' · '}
           <Link href="/staff/lend">จ่ายอุปกรณ์ให้ผู้ยืม</Link>
         </p>
+
+        <div className="filter-row">
+          <button
+            className={`btn btn-sm ${onlyOverdue ? 'btn-outline' : 'btn-primary'}`}
+            onClick={() => setOnlyOverdue(false)}
+          >
+            ทั้งหมด
+          </button>
+          <button
+            className={`btn btn-sm ${onlyOverdue ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setOnlyOverdue(true)}
+          >
+            เกินกำหนด
+          </button>
+        </div>
 
         {items === null ? (
           <div className="empty-state">กำลังโหลด...</div>
