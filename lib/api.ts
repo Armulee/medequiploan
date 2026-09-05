@@ -66,7 +66,7 @@ export function errorResponse(err: unknown) {
   // shipped column cost a round of "approve says error but it approved". Say
   // what it is instead: the write had already happened, only the read back
   // failed.
-  const code = (err as { code?: string } | null)?.code;
+  const code = causeCode(err);
   if (code === '42703' || code === '42P01') {
     return NextResponse.json(
       {
@@ -79,7 +79,55 @@ export function errorResponse(err: unknown) {
     );
   }
 
+  // Storage is the other thing that fails only once deployed, and "server
+  // error" sends whoever is holding the phone looking in the wrong place.
+  const storage = storageProblem(err);
+  if (storage) {
+    return NextResponse.json({ error: storage, code: 'STORAGE' }, { status: 500 });
+  }
+
   return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ (server error)' }, { status: 500 });
+}
+
+/**
+ * Find a Postgres error code anywhere in the chain.
+ *
+ * Reading `err.code` off the top only worked for an error thrown by the driver
+ * directly. Drizzle wraps a failed query in its own error and keeps the real
+ * one on `cause`, so the schema-mismatch branch above never fired — a missing
+ * migration reported itself as a plain "server error", which is exactly the
+ * message it was written to replace.
+ */
+function causeCode(err: unknown): string | undefined {
+  for (let e = err, depth = 0; e && depth < 5; e = (e as { cause?: unknown }).cause, depth++) {
+    const code = (e as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
+}
+
+/** Whether this is the blob store refusing, and what to say about it. */
+function storageProblem(err: unknown): string | null {
+  const names: string[] = [];
+  for (let e = err, depth = 0; e && depth < 5; e = (e as { cause?: unknown }).cause, depth++) {
+    const n = (e as { name?: unknown }).name;
+    const m = (e as { message?: unknown }).message;
+    if (typeof n === 'string') names.push(n);
+    if (typeof m === 'string') names.push(m);
+  }
+  const text = names.join(' ');
+  if (!/Blob|blob/.test(text)) return null;
+
+  // The store is there but will not take the write — almost always a store
+  // that has not been connected to this deployment, or a token that no longer
+  // matches it. Say which of the two so it is a five-minute fix.
+  if (/Access denied|not authorized|token|Unauthorized|store not found|BlobStoreNotFound/i.test(text)) {
+    return (
+      'อัปโหลดไม่สำเร็จ: เข้าถึง Blob store ไม่ได้ ' +
+      'ให้ผู้ดูแลตรวจว่า Blob store ถูก connect กับ project นี้แล้ว แล้ว redeploy หนึ่งครั้ง'
+    );
+  }
+  return `อัปโหลดไม่สำเร็จ: ที่เก็บไฟล์ตอบกลับมาว่า ${text.slice(0, 160)}`;
 }
 
 type Handler<C> = (req: Request, ctx: C) => Promise<Response>;

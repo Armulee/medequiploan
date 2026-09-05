@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus, Pencil, TriangleAlert } from 'lucide-react';
+import { Image as ImageIcon, ImagePlus, Pencil, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import Dialog, { DialogActions } from '@/components/Dialog';
@@ -95,7 +95,13 @@ export default function StockTab({
           <div className="list">
             {(paged ?? []).map((e) => (
               <div className="list-row" key={e.equipment_id}>
-                <div>
+                {/* The photograph the public sees for this item, beside the
+                    row that sets it. Staff picking equipment off a shelf
+                    recognise it by sight long before they read the name, and
+                    it makes an item whose picture is missing or wrong obvious
+                    from the list instead of only from the landing page. */}
+                <EquipmentThumb src={e.image} name={e.name} />
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="title">
                     {e.name}
                     {e.low_stock && (
@@ -551,5 +557,30 @@ function EditEquipmentDialog({
         <DialogActions confirmLabel="บันทึก" onCancel={onClose} busy={busy} />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * A small square for the catalogue photograph, or a clearly empty one.
+ *
+ * The empty state is drawn rather than left blank so "no picture yet" reads as
+ * a thing to fix — the landing page shows nothing for these, so a missing
+ * photograph is a gap the public sees.
+ */
+function EquipmentThumb({ src, name }: { src: string; name: string }) {
+  const [broken, setBroken] = useState(false);
+
+  if (!src || broken) {
+    return (
+      <div className="equip-thumb is-empty" title="ยังไม่มีรูป">
+        <ImageIcon size={18} />
+      </div>
+    );
+  }
+  return (
+    <div className="equip-thumb">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={name} loading="lazy" decoding="async" onError={() => setBroken(true)} />
+    </div>
   );
 }

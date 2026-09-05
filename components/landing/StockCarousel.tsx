@@ -16,14 +16,6 @@ import 'swiper/css/effect-fade';
 // what the name contains rather than on an id. Anything unrecognised falls
 // back to the icon — a new item added next year should still list, just
 // without a photograph.
-const PICTURES: Array<{ slug: string; match: RegExp }> = [
-  { slug: 'wheelchair', match: /wheelchair|วีลแชร์|รถเข็น/i },
-  { slug: 'crutches', match: /crutch|ไม้ค้ำ/i },
-  { slug: 'hospital-bed', match: /bed|เตียง/i },
-  { slug: 'walker', match: /walker|ช่วยเดิน|วอล์ค/i },
-  { slug: 'oxygen-concentrator', match: /oxygen|ออกซิเจน/i },
-];
-
 // Swiper's fade stacks every slide and hides all but one, so it cannot show
 // two or three at a time — probed, not assumed: with slidesPerView 3 and
 // effect fade, one slide occupied the row. The effect is also not a
@@ -46,9 +38,6 @@ function useSlidesPerView() {
   return n;
 }
 
-const pictureFor = (name: string) =>
-  PICTURES.find((p) => p.match.test(name))?.slug ?? null;
-
 // The nav labels get one line and about a dozen characters on a phone, so
 // "วีลแชร์ (Wheelchair)" is trimmed to whichever half a Thai reader wants —
 // which is not always the half outside the brackets: "Walker (โครงเหล็กช่วยเดิน)"
@@ -62,26 +51,6 @@ function shortName(name: string) {
   if (THAI.test(outside)) return outside.trim();
   if (THAI.test(inside)) return inside.trim();
   return outside.trim() || name;
-}
-
-const srcSet = (slug: string, ext: string) =>
-  `/assets/equipment/${slug}-440.${ext} 440w, /assets/equipment/${slug}-880.${ext} 880w`;
-
-function Photo({ slug, name, eager }: { slug: string; name: string; eager: boolean }) {
-  return (
-    <picture>
-      <source type="image/avif" srcSet={srcSet(slug, 'avif')} sizes="(max-width: 700px) 62vw, 300px" />
-      <source type="image/webp" srcSet={srcSet(slug, 'webp')} sizes="(max-width: 700px) 62vw, 300px" />
-      <img
-        src={`/assets/equipment/${slug}-440.png`}
-        alt={name}
-        width={440}
-        height={440}
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-      />
-    </picture>
-  );
 }
 
 export default function StockCarousel() {
@@ -160,14 +129,17 @@ export default function StockCarousel() {
         onResize={(s) => setSnaps(s.snapGrid?.length ?? 1)}
         a11y={{ enabled: false }}
       >
-        {items.map((e, i) => {
-          // An uploaded photograph wins over the bundled one: staff who added
-          // their own picture in the stock tab meant it to be used.
-          const slug = e.image ? null : pictureFor(e.name);
-          return (
+        {items.map((e, i) => (
             <SwiperSlide key={e.equipment_id}>
               <figure className="stock-slide">
                 <div className="stock-shot">
+                  {/* Only what staff uploaded. There used to be a set of
+                      bundled pictures matched against the equipment name, which
+                      meant a new item called something the patterns did not
+                      recognise silently got no picture, and an item whose real
+                      photograph differed from the stock one showed the stock
+                      one to the public. The catalogue now says exactly what the
+                      centre has, or says nothing. */}
                   {e.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -176,8 +148,6 @@ export default function StockCarousel() {
                       loading={i === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                     />
-                  ) : slug ? (
-                    <Photo slug={slug} name={e.name} eager={i === 0} />
                   ) : (
                     <Package size={72} color="var(--border)" strokeWidth={1.5} />
                   )}
@@ -190,8 +160,7 @@ export default function StockCarousel() {
                 </figcaption>
               </figure>
             </SwiperSlide>
-          );
-        })}
+          ))}
       </Swiper>
 
       {pages > 1 && (

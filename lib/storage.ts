@@ -66,27 +66,24 @@ function warnDiskFallback(): void {
 export type Folder = 'id_cards' | 'illness_photos' | 'equipment';
 
 /**
- * Which folders are stored as private blobs.
+ * Store an uploaded image, re-encoded, and hand back its id.
  *
- * Everything used to be `access: 'public'`, with security resting entirely on
- * a 64-bit random key in the URL. That is fine until the URL escapes — a log
- * line, an error report, a screenshot, a Referer — and then the ID card of a
- * named person is readable by anyone on the internet, permanently, with no way
- * to revoke it. Private blobs are fetched with the store's token, so a leaked
- * URL is worth nothing on its own.
- *
- * Equipment photographs stay public: they are catalogue pictures shown on the
- * public landing page, and serving them through a signed fetch would put every
- * home-page image through a function for no benefit.
- */
-const isPrivate = (folder: Folder) => folder !== 'equipment';
-const folderOf = (id: string) => id.split('/')[0] as Folder;
-
-/**
  * The extension comes from the sniffed MIME type, never from the uploaded
  * filename. The old code took `path.extname(file.originalname)` verbatim, so a
  * file claiming to be an image but named `x.html` was stored as .html and later
  * served as HTML to a logged-in staff member — stored XSS.
+ *
+ * Everything is written as a private blob, including catalogue photographs.
+ * Public access rested entirely on a 64-bit random key in the URL, which is
+ * fine until the URL escapes — a log line, an error report, a screenshot, a
+ * Referer — and then a named person's ID card is readable by anyone, forever,
+ * with no way to revoke it. Equipment photographs were the exception on the
+ * theory that pictures on a public landing page should not need a signed
+ * fetch, but that theory was wrong about this system: the browser never sees a
+ * blob URL for them either. /api/equipment-photo reads the file server-side
+ * and streams it with a year-long immutable cache, so the public access level
+ * bought nothing and was one more thing a store could refuse in production
+ * while working everywhere else.
  */
 export async function saveUpload(folder: Folder, file: File): Promise<string> {
   if (!ALLOWED.has(file.type)) {
@@ -107,7 +104,7 @@ export async function saveUpload(folder: Folder, file: File): Promise<string> {
 
   if (useBlob()) {
     await put(id, bytes, {
-      access: isPrivate(folder) ? 'private' : 'public',
+      access: 'private',
       contentType: 'image/webp',
       addRandomSuffix: false,
     });
@@ -158,18 +155,24 @@ export async function readUpload(
   }
 
   if (useBlob()) {
-    try {
-      // A private blob is read with the store's token rather than by URL, so
-      // knowing the path is not enough to fetch it.
-      const result = await get(id, { access: isPrivate(folderOf(id)) ? 'private' : 'public' });
-      if (!result || !result.stream) return null;
-      return {
-        body: result.stream,
-        contentType: result.blob.contentType || 'application/octet-stream',
-      };
-    } catch {
-      return null;
+    // Private first, because that is how everything is written now. Falling
+    // back to public covers equipment photographs uploaded before that
+    // changed: the access level is fixed when a blob is created, so those
+    // files are still public and a private read will not find them.
+    for (const access of ['private', 'public'] as const) {
+      try {
+        const result = await get(id, { access });
+        if (result?.stream) {
+          return {
+            body: result.stream,
+            contentType: result.blob.contentType || 'application/octet-stream',
+          };
+        }
+      } catch {
+        // Try the other access level before giving up.
+      }
     }
+    return null;
   }
 
   try {

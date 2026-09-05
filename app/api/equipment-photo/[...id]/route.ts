@@ -22,7 +22,10 @@ export const GET = route<Ctx>(async (_req, { params }) => {
     headers: {
       'Content-Type': file.contentType,
       // Names carry a random suffix, so a stored file never changes under a
-      // given URL and can be cached hard.
+      // given URL and can be cached hard. next.config.mjs has to grant this
+      // path an exception as well: the blanket `private, no-store` it puts on
+      // /api/* to protect personal data would otherwise override this header
+      // and nothing here would ever be cached.
       'Cache-Control': 'public, max-age=31536000, immutable',
     },
   });

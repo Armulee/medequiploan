@@ -1052,6 +1052,26 @@ button.stat-tile:hover, a.stat-tile:hover {
   border: 1.5px solid var(--border); background: var(--orange-bg);
 }
 .photo-grid figcaption { margin-top: 6px; font-size: 0.85rem; color: var(--text-muted); }
+/* The catalogue photograph beside a stock row. Fixed square so the rows keep
+   a straight left edge whatever shape the uploaded picture is. */
+.equip-thumb {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--orange-bg);
+  overflow: hidden;
+}
+.equip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.equip-thumb.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
 /* Stands in for a photograph whose file is gone, at the same size the image
    would have been, so a missing ID card reads as a problem rather than as an
    empty gap someone scrolls past. */

@@ -80,6 +80,16 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'private, max-age=3600' }],
       },
       {
+        // And catalogue photographs, which carry no personal data at all and
+        // are the heaviest thing on the public landing page. The blanket
+        // no-store above was overriding the route's own immutable header, so
+        // every visitor re-downloaded every picture through a function on
+        // every page view. Stored names carry a random suffix and are never
+        // rewritten, so a URL's content cannot change.
+        source: '/api/equipment-photo/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         source: '/staff/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
