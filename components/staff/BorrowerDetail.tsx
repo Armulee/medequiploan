@@ -73,16 +73,14 @@ export default function BorrowerDetail({
             {borrower.first_name} {borrower.last_name}
           </h1>
           {/* Opened from the request queue this shows the decision. Opened
-              from anywhere else there is no request, so it falls back to
-              whether staff have seen the ID card — which is what `verified`
-              has always meant. It used to read "ยังไม่ยืนยันตัวตน", as though
-              the borrower had failed to do something; nothing on this site
-              asks them to verify anything. */}
+              from anywhere else there is no request, so it says how the
+              borrower got here instead — which is all `verified` records now
+              that registration no longer photographs an ID card. */}
           {requestStatus ? (
             <span className={statusBadgeClass(requestStatus)}>{requestStatus}</span>
           ) : (
             <span className={borrower.verified ? 'badge badge-approved' : 'badge badge-pending'}>
-              {borrower.verified ? 'เจ้าหน้าที่ตรวจบัตรแล้ว' : 'ยังไม่ได้ตรวจบัตร'}
+              {borrower.verified ? 'ลงทะเบียนโดยเจ้าหน้าที่' : 'มาจากฟอร์มออนไลน์'}
             </span>
           )}
         </div>

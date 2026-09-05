@@ -63,10 +63,11 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัว (PDPA) และผู้ยืมให้ความยินยอมแล้ว');
   }
 
-  const photo = form.get('id_card_photo');
-  if (!(photo instanceof File) || photo.size === 0) {
-    throw new ApiError('กรุณาแนบรูปบัตรประชาชนเพื่อยืนยันตัวตน');
-  }
+  // Optional, and the same photo the public form takes: what helps staff
+  // decide is a picture of the condition, not a copy of an ID card they are
+  // holding in their hand anyway. One less copy of an ID document stored.
+  const photo = form.get('illness_photo');
+  const hasPhoto = photo instanceof File && photo.size > 0;
 
   const hash = nationalIdHash(nationalId);
   const [existing] = await db.select().from(borrowers).where(eq(borrowers.nationalIdHash, hash));
@@ -74,9 +75,11 @@ export const POST = route(async (req: Request) => {
     throw new ApiError(`เลขบัตรประชาชนนี้ลงทะเบียนไว้แล้ว (รหัส ${existing.borrowerId})`, 409);
   }
 
-  const idCardPhotoId = await saveUpload('id_cards', photo).catch((e) => {
-    throw new ApiError(e instanceof Error ? e.message : 'อัปโหลดรูปไม่สำเร็จ');
-  });
+  const illnessPhotoId = hasPhoto
+    ? await saveUpload('illness_photos', photo).catch((e) => {
+        throw new ApiError(e instanceof Error ? e.message : 'อัปโหลดรูปไม่สำเร็จ');
+      })
+    : null;
 
   const [created] = await db
     .insert(borrowers)
@@ -92,7 +95,9 @@ export const POST = route(async (req: Request) => {
       consentAcceptedAt: new Date(),
       consentVersion: CONSENT_VERSION,
       illnessDescription: str('illness_description'),
-      idCardPhotoId,
+      illnessPhotoId,
+      // Registered face to face rather than through the public form. It no
+      // longer means an ID card was photographed — nothing asks for one.
       verified: true,
       selfRegistered: false,
       registeredBy: user.user_id,

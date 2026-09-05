@@ -52,17 +52,12 @@ export default function RegisterTab() {
       setError('กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัวและผู้ยืมให้ความยินยอมแล้ว');
       return;
     }
-    if (!photo) {
-      setError('กรุณาแนบรูปบัตรประชาชนเพื่อยืนยันตัวตน');
-      return;
-    }
-
     setBusy(true);
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
       fd.append('consent', 'true');
-      fd.append('id_card_photo', photo);
+      if (photo) fd.append('illness_photo', photo);
       const res = await apiForm<{ borrower: BorrowerFull }>('/api/borrowers', fd);
       setDone(res.borrower);
       setForm(EMPTY);
@@ -153,9 +148,9 @@ export default function RegisterTab() {
         </div>
 
         <div className="field">
-          <label htmlFor="reg_idcard">รูปบัตรประชาชน *</label>
+          <label htmlFor="reg_illness_photo">ภาพประกอบอาการป่วย (ถ้ามี)</label>
           <input
-            id="reg_idcard"
+            id="reg_illness_photo"
             type="file"
             accept="image/*"
             capture="environment"
@@ -178,7 +173,7 @@ export default function RegisterTab() {
             }}
           />
           <div className="hint">
-            {photoNote || 'บังคับแนบเพื่อยืนยันตัวตน · เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ'}
+            {photoNote || 'ไม่บังคับ · เป็นข้อมูลสุขภาพ เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ'}
           </div>
         </div>
 

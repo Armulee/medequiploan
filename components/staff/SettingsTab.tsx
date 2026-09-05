@@ -142,7 +142,9 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
           />
         </div>
 
-        <div className="row">
+        {/* Not a .row: "พิมพ์รหัสผ่านใหม่อีกครั้ง" wraps to two lines beside
+            "รหัสผ่านใหม่" on a phone, and the boxes stop lining up. */}
+        <div className="pw-row">
           <div className="field">
             <label htmlFor="acc_new">รหัสผ่านใหม่</label>
             <input
