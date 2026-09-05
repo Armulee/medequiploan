@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { del, head, put } from '@vercel/blob';
+import sharp from 'sharp';
 
 // ID-card and illness photos are health data. They are stored under an
 // unguessable key and never exposed by direct URL — /api/files/[id] checks the
@@ -36,21 +37,26 @@ export type Folder = 'id_cards' | 'illness_photos' | 'equipment';
  * served as HTML to a logged-in staff member — stored XSS.
  */
 export async function saveUpload(folder: Folder, file: File): Promise<string> {
-  const ext = ALLOWED.get(file.type);
-  if (!ext) {
+  if (!ALLOWED.has(file.type)) {
     throw new Error('รองรับเฉพาะไฟล์รูปภาพ (jpg, png, webp, heic)');
   }
   if (file.size > MAX_UPLOAD_BYTES) {
     throw new Error('ไฟล์ใหญ่เกิน 8MB กรุณาย่อรูปก่อนอัปโหลด');
   }
 
-  const id = `${folder}/${Date.now()}_${crypto.randomBytes(8).toString('hex')}${ext}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  // Everything above came from the client. `file.type` is a claim, and a
+  // claim was the only check: send any bytes at all with type image/png and
+  // they were stored. Re-encoding is what turns the claim into a fact — a
+  // file sharp cannot decode as an image is not an image — and it strips EXIF
+  // on the way through, which matters because a photograph of an ID card
+  // taken at home carries the GPS coordinates of that home.
+  const bytes = await reencode(Buffer.from(await file.arrayBuffer()));
+  const id = `${folder}/${Date.now()}_${crypto.randomBytes(8).toString('hex')}.webp`;
 
   if (useBlob()) {
     await put(id, bytes, {
       access: 'public', // unguessable key; access is gated by /api/files/[id]
-      contentType: file.type,
+      contentType: 'image/webp',
       addRandomSuffix: false,
     });
   } else {
@@ -63,10 +69,37 @@ export async function saveUpload(folder: Folder, file: File): Promise<string> {
   return id;
 }
 
+/**
+ * Decode whatever arrived and write a clean WebP back out.
+ *
+ * Three things at once: it proves the bytes really are an image, it discards
+ * every metadata block including EXIF and GPS, and it bounds what is stored —
+ * the browser already downscales, but the browser is not the only thing that
+ * can post to this endpoint.
+ *
+ * `failOn: 'none'` keeps a slightly malformed but readable photo from a cheap
+ * phone camera working; a file that is not an image at all still throws,
+ * which is the check that matters.
+ */
+async function reencode(input: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(input, { failOn: 'none', limitInputPixels: 50_000_000 })
+      // Honour the camera's orientation flag before the flag is thrown away.
+      .rotate()
+      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    throw new Error('ไฟล์นี้ไม่ใช่รูปภาพที่อ่านได้ กรุณาเลือกรูปใหม่');
+  }
+}
+
 export async function readUpload(
   id: string
 ): Promise<{ body: ReadableStream | Buffer; contentType: string } | null> {
-  // Reject traversal before the id ever reaches the filesystem or Blob.
+  // Reject traversal before the id ever reaches the filesystem or Blob. The
+  // older extensions stay accepted because files stored before uploads were
+  // re-encoded still carry them.
   if (!/^(id_cards|illness_photos|equipment)\/[A-Za-z0-9_]+\.(jpg|png|webp|heic|heif)$/.test(id)) {
     return null;
   }
