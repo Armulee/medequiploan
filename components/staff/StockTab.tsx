@@ -46,7 +46,10 @@ export default function StockTab({
   return (
     <>
       <div className="card">
-        <div className="card-head">
+        {/* card-head-row, like the staff page: on a phone the stacked default
+            gave "+ เพิ่มอุปกรณ์" the full width of the card and pushed the
+            whole list down for a button that is used once in a while. */}
+        <div className="card-head card-head-row">
           <h1>สต็อกอุปกรณ์</h1>
           {isAdmin && (
             <button className="btn btn-sm btn-primary" onClick={() => setShowAdd((v) => !v)}>
