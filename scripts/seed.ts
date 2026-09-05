@@ -49,7 +49,7 @@ async function main() {
       { name: 'ไม้ค้ำยัน (Crutches)', category: 'เคลื่อนที่', totalQty: 20, availableQty: 20, lowStockThreshold: 4 },
       { name: 'เตียงผู้ป่วยไฟฟ้า (Electric Bed)', category: 'เตียง/ที่นอน', totalQty: 5, availableQty: 5, lowStockThreshold: 1 },
       { name: 'เครื่องผลิตออกซิเจน (Oxygen Concentrator)', category: 'ระบบหายใจ', totalQty: 6, availableQty: 6, lowStockThreshold: 2 },
-      { name: 'Walker (โครงเหล็กช่วยเดิน)', category: 'เคลื่อนที่', totalQty: 15, availableQty: 15, lowStockThreshold: 3 },
+      { name: 'โครงเหล็กช่วยเดิน (Walker)', category: 'เคลื่อนที่', totalQty: 15, availableQty: 15, lowStockThreshold: 3 },
     ]);
     console.log('สร้างอุปกรณ์ตัวอย่างแล้ว 5 รายการ');
   } else {
