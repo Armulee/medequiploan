@@ -950,17 +950,33 @@ a.list-row:hover { text-decoration: none; }
 .contact-line { display: inline-flex; align-items: center; gap: 5px; margin-top: 3px; }
 .contact-line a { font-weight: 600; }
 
+/* The two actions closing the landing page.
+   
+   A flex row with a real gap, rather than a margin hung on the second button.
+   The margin version had to be undone and re-declared at the phone breakpoint,
+   and the 10px it left there was not enough separation between two large
+   pills — the primary one carries a drop shadow, which eats most of a gap that
+   small and leaves them looking stuck together. */
+.cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+/* Below the wrap point they stack full width, so the gap is the only thing
+   holding them apart and wants to be bigger than it is side by side. */
+@media (max-width: 560px) {
+  .cta-actions { flex-direction: column; gap: 16px; }
+  .cta-actions .btn { width: 100%; }
+}
+
 /* Secondary action in the closing call-to-action band, on the orange fill. */
 .cta-band .cta-secondary {
-  margin-left: 10px;
   background: transparent;
   color: var(--white);
   border-color: rgba(255, 255, 255, 0.7);
 }
 .cta-band .cta-secondary:hover { background: rgba(255, 255, 255, 0.15); }
-@media (max-width: 560px) {
-  .cta-band .cta-secondary { margin: 10px 0 0; display: block; }
-}
 
 .dialog-actions { display: flex; gap: 8px; margin-top: 16px; }
 .dialog-actions .btn { flex: 1; }

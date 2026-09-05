@@ -178,12 +178,14 @@ export default function LandingPage() {
       <div className="cta-band">
         <h2>พร้อมยืมอุปกรณ์แล้วใช่ไหม?</h2>
         <p>ส่งคำขอวันนี้ เจ้าหน้าที่จะติดต่อกลับเพื่อนัดหมายรับอุปกรณ์โดยเร็วที่สุด</p>
-        <Link href="/request" className="btn btn-primary btn-lg">
-          ส่งคำขอยืมอุปกรณ์
-        </Link>
-        <Link href="/tracking" className="btn btn-outline btn-lg cta-secondary">
-          ติดตามคำขอที่ส่งไว้
-        </Link>
+        <div className="cta-actions">
+          <Link href="/request" className="btn btn-primary btn-lg">
+            ส่งคำขอยืมอุปกรณ์
+          </Link>
+          <Link href="/tracking" className="btn btn-outline btn-lg cta-secondary">
+            ติดตามคำขอที่ส่งไว้
+          </Link>
+        </div>
       </div>
 
       <footer className="site-footer">ศูนย์ยืม-คืนกายอุปกรณ์การแพทย์</footer>
