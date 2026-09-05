@@ -280,6 +280,76 @@ button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important;
 
 .footer-note { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 22px 10px; }
 
+/* A link that has to be a <button> because it performs an action rather than
+   going anywhere — logging out, removing a passkey. Styled as a link so it
+   does not read as a second primary action beside the real button. */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--orange-dark);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-button:hover { color: var(--orange); }
+
+/* Why a passkey, on the enrolment gate. Left-aligned inside the centred login
+   card on purpose: two lines of centred prose is harder to read than it is
+   pretty. */
+.passkey-why {
+  text-align: left;
+  background: var(--orange-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+.passkey-why p {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.passkey-why p + p { margin-top: 10px; }
+.passkey-why svg { flex: none; margin-top: 2px; }
+.passkey-why strong { color: var(--text); font-weight: 600; }
+
+/* One enrolled passkey in the settings list. */
+.passkey-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.passkey-row:last-child { border-bottom: 0; }
+.passkey-row .title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.passkey-row .sub { color: var(--text-muted); font-size: 0.82rem; margin-top: 2px; }
+
+/* The Turnstile widget. It sizes itself, so this only gives it breathing room
+   and keeps it from stretching oddly inside the form's flow. */
+.turnstile-holder { margin: 14px 0; min-height: 65px; }
+
+/* A one-time secret an admin has to read out loud. Monospaced and selectable,
+   big enough to read off a screen across a desk. */
+.temp-password {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  user-select: all;
+  background: var(--orange-bg);
+  border: 1px dashed var(--orange-mid);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  word-break: break-all;
+}
+
 /* The base rule must come BEFORE the media query: a media query adds no
    specificity, so a later `display: none` beat the `display: flex` inside it
    and the desktop nav never appeared at any width. */

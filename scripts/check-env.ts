@@ -41,6 +41,37 @@ if (!process.env.BLOB_READ_WRITE_TOKEN) {
   );
 }
 
+const rp = process.env.WEBAUTHN_RP_ID;
+if (rp) {
+  // An RP id is a bare domain. A scheme, a port or a path in there does not
+  // fail loudly — it fails as "every passkey on this deployment stops working",
+  // which is a much worse afternoon.
+  if (/[:/]/.test(rp)) {
+    problems.push(
+      `WEBAUTHN_RP_ID ต้องเป็นชื่อโดเมนล้วน ๆ (เช่น example.org) ไม่ใช่ "${rp}" — ห้ามมี https:// หรือ :port หรือ path`
+    );
+  } else if (/^\d+\.\d+\.\d+\.\d+$/.test(rp)) {
+    problems.push('WEBAUTHN_RP_ID เป็นเลข IP ไม่ได้ พาสคีย์ต้องผูกกับชื่อโดเมน');
+  }
+} else {
+  console.warn(
+    '⚠️  ไม่ได้ตั้ง WEBAUTHN_RP_ID — ระบบจะอ่านโดเมนจาก header ที่เบราว์เซอร์เรียกมา ซึ่งใช้งานได้ปกติ\n' +
+      '   ตั้งไว้เป็นโดเมนจริงจะดีกว่า เพราะตรึงค่าไว้แน่นอน · แต่ถ้ามีคนสร้างพาสคีย์ไปแล้ว ' +
+      'การเปลี่ยนค่านี้ทีหลังจะทำให้พาสคีย์เดิมใช้ไม่ได้ทั้งหมด'
+  );
+}
+
+// Turnstile is all-or-nothing: one key without the other is a form that either
+// shows a challenge nobody checks, or checks one that never renders.
+const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const secretKey = process.env.TURNSTILE_SECRET_KEY;
+if (Boolean(siteKey) !== Boolean(secretKey)) {
+  problems.push(
+    'Turnstile ตั้งไม่ครบ — ต้องมีทั้ง NEXT_PUBLIC_TURNSTILE_SITE_KEY และ TURNSTILE_SECRET_KEY ' +
+      'หรือไม่ตั้งเลยทั้งคู่ (ปิดการใช้งาน)'
+  );
+}
+
 if (problems.length > 0) {
   console.error('❌ ตั้งค่าไม่ครบ:\n' + problems.map((p) => '   - ' + p).join('\n'));
   process.exit(1);

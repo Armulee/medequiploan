@@ -2,6 +2,22 @@ import { db } from './db';
 import { auditLog } from './db/schema';
 import type { SessionUser } from './session';
 
+/**
+ * The actor for something the system did on its own — a scheduled job, or the
+ * same job run from a terminal. `null` already means "a member of the public
+ * did this on an open form", and a weekly cron deleting records is not that;
+ * a log that calls it that is worse than one that says nothing.
+ */
+export const SYSTEM_ACTOR: SessionUser = {
+  user_id: 'system',
+  username: 'system',
+  // For the log only — nothing authorises against this. It says 'staff'
+  // rather than 'admin' so that if it ever did leak into a permission check
+  // by mistake, it would grant the least it possibly could.
+  role: 'staff',
+  name: 'ระบบอัตโนมัติ',
+};
+
 export async function logAction(entry: {
   actor: SessionUser | null;
   action: string;

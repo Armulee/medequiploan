@@ -17,6 +17,9 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   - `lib/db/index.ts` — เลือก driver อัตโนมัติ: Neon HTTP บน production, node-postgres เมื่อชี้ localhost
   - `lib/borrow.ts` — business logic ยืม/คืน (ใช้ร่วมกันระหว่าง staff-borrow กับ approve-request)
   - `lib/crypto.ts` — AES-256-GCM สำหรับเลขบัตรประชาชน + keyed hash ไว้ค้นหา
+  - `lib/auth.ts` — `requireActiveUser()` เช็คบัญชีจาก DB ทุก request (active + `sessionVersion`)
+  - `lib/webauthn.ts` — พาสคีย์: rpId/origin, challenge ที่เก็บใน Postgres แบบใช้ครั้งเดียว
+  - `lib/password.ts` — `passwordProblem()` กันรหัสสั้น/ซ้ำตัวอักษร/เรียงกัน/ยอดฮิต/มีชื่อผู้ใช้
   - `lib/api.ts` — `route()` wrapper, `requireAuth()`, `requireRole()`
   - `lib/session.ts` — iron-session · `lib/storage.ts` — Vercel Blob (fallback ลงดิสก์ตอน dev)
 - **Frontend**: React ทั้งหมด — `app/page.tsx` (หน้าแรก), `app/request/` (ฟอร์มสาธารณะ),
@@ -40,10 +43,31 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
 
 - **PII**: เลขบัตรประชาชนต้องผ่าน `encrypt()` เสมอ ห้ามเก็บ plain text · ค้นหาด้วย
   `nationalIdHash()` อย่า decrypt ทั้งตารางมา filter
+- **เข้าสู่ระบบ = พาสคีย์ (WebAuthn)** รหัสผ่านเหลือไว้เป็นตั๋วเข้าครั้งแรกเท่านั้น
+  · `POST /api/auth/login` **ตอบ 403 ทันทีถ้าบัญชีนั้นมีพาสคีย์แล้ว** — ปล่อยให้รหัสผ่านใช้ต่อได้
+  เท่ากับเปิดทางที่ฟิชชิ่งได้ไว้ข้าง ๆ ทางที่ฟิชชิ่งไม่ได้ แล้วคนโจมตีก็เลือกทางแรกเสมอ
+  · `StaffFrame` กันไว้ที่ `passkeys === 0` → ไปหน้า `PasskeySetup` เข้าหน้าอื่นไม่ได้
+  (แต่นั่นคือ UI — ตัวบังคับจริงคือ 403 ข้างบน)
+  · credential เป็นแบบ **discoverable** (`residentKey: 'required'`) หน้า login เลยไม่ถามชื่อผู้ใช้
+  และ endpoint `GET /api/auth/passkey/login` ก็ไม่บอกว่าบัญชีไหนมีอยู่จริง
+  · **rpId/origin อ่านจาก header `x-forwarded-host` / `host`** ไม่ใช่ `new URL(req.url)`
+  ซึ่งหลัง proxy จะเป็น host ภายในและไม่ตรงกับที่เบราว์เซอร์เห็น = สร้างพาสคีย์ไม่ผ่านเลย
+  · **เทสต้องเปิดที่ `localhost` ห้าม `127.0.0.1`** — rpId เป็น IP ไม่ได้ เบราว์เซอร์ปฏิเสธ
+  · ทำอุปกรณ์หาย → `POST /api/users/[id]/reset-passkeys` (admin เท่านั้น) ลบพาสคีย์ทุกอัน
+  ดัน `sessionVersion` (ตัดเครื่องที่ถูกขโมยไปด้วย) แล้วคืนรหัสผ่านชั่วคราวมาครั้งเดียว
 - **สิทธิ์**: ทุก endpoint ที่แตะข้อมูลผู้ยืม/รูปภาพ ต้องเรียก `requireAuth()` หรือ `requireRole()`
   · เฉพาะ admin: จัดการเจ้าหน้าที่ (`/api/users`), audit log, จัดการสต็อก
   · การซ่อนแท็บใน UI ไม่ใช่การป้องกัน — API ต้องเช็คเองเสมอ
 - **Audit**: ทุกการกระทำที่มีผลต่อข้อมูลต้องเรียก `logAction()`
+  · งานที่ระบบทำเอง (cron, CLI) ให้ส่ง `SYSTEM_ACTOR` ไม่ใช่ `null` — `null` แปลว่า
+  "คนทั่วไปกดผ่านฟอร์มสาธารณะ" ซึ่ง cron ที่ลบข้อมูลไม่ใช่อย่างนั้น
+- **Data retention**: `lib/retention.ts` · cron รายสัปดาห์ลบข้อมูลส่วนบุคคลของผู้ยืม
+  ที่ไม่มีกิจกรรมเกิน 2 ปี ตามที่ `lib/consent.ts` ประกาศไว้
+  · **ห้ามลบทั้งแถว** — ทุกรายการยืม/คืน/audit อ้างถึงรหัสผู้ยืม · ล้างเฉพาะฟิลด์ที่ระบุตัวคน
+  แล้วตั้ง `anonymisedAt` · **ลบไฟล์รูปใน Blob ด้วย** ไม่ใช่แค่ตัดลิงก์
+  · `national_id_hash` เป็น NOT NULL + unique จึงเขียนทับด้วยค่าที่ derive จากรหัสผู้ยืม
+  (ไม่ชนกัน และไม่มีทางตรงกับ hash ของเลขบัตรจริง คนเดิมจึงลงทะเบียนใหม่ได้)
+  · **ถ้าแก้ข้อความ "เก็บไว้นานแค่ไหน" ใน `lib/consent.ts` ต้องแก้ `RETENTION_DAYS` ให้ตรงกัน**
 - **รูปบัตรประชาชนบังคับแนบ** ทั้งฟอร์มสาธารณะ (`/request`) และหน้าลงทะเบียนของเจ้าหน้าที่
   · เช็คที่ server ด้วย ไม่ใช่แค่ฟอร์ม · เก็บที่โฟลเดอร์ `id_cards`
   · **ช่องอัปโหลดรูปห้ามใส่ `capture`** — มันข้าม picker แล้วเปิดกล้องสดเลย คนที่ถ่ายบัตรไว้แล้ว
@@ -61,9 +85,19 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
 - **PDPA consent**: ฟอร์มที่เก็บข้อมูลส่วนบุคคลต้องมี `ConsentNotice` และ **server ต้องเช็ค
   `consent === 'true'` เอง** ไม่ใช่เชื่อ checkbox ฝั่ง client · บันทึกเวลา + `CONSENT_VERSION`
   ทุกครั้ง ถ้าแก้ข้อความประกาศใน `lib/consent.ts` ต้องขึ้น version ด้วย
+- **Turnstile**: `/request` กับ `/tracking` เรียก `requireHuman()` จาก `lib/turnstile.ts`
+  · **ปิดอยู่โดยปริยาย** ไม่มี key = no-op ทั้งฝั่ง server และ widget (`components/Turnstile.tsx`
+  คืน `null`) · token ใช้ได้ครั้งเดียวและถูกใช้ทิ้งทุกครั้งที่เรียก แม้ request จะ fail ทีหลัง
+  ฟอร์มจึงต้องรีเซ็ต widget (`resetSignal`) ทุกครั้งที่กดส่ง
+  · fail closed ถ้า Cloudflare บอกว่า token ไม่ผ่าน · **fail open ถ้าติดต่อ Cloudflare ไม่ได้**
+  · CSP เปิด `challenges.cloudflare.com` เฉพาะเมื่อมี site key
 - **Rate limit**: endpoint ที่เปิดสาธารณะหรือรับรหัสผ่าน ต้องผ่าน `hit()` จาก `lib/rate-limit.ts`
   · เก็บ counter ใน Postgres ไม่ใช่ memory (serverless แต่ละ instance ไม่แชร์กัน)
   · limiter ออกแบบให้ **fail open** — ถ้ามันพัง ต้องไม่ล็อกเจ้าหน้าที่ออกจากระบบทั้งองค์กร
+  · **นับเฉพาะครั้งที่ล้มเหลว** — สำเร็จแล้วต้อง `reset()` bucket ทิ้ง ไม่งั้นเจ้าหน้าที่ที่เข้า-ออก
+  ทั้งวันจะล็อกตัวเองออกทั้งที่ไม่เคยพิมพ์ผิด · และ**ทั้งสำนักงานใช้ IP เดียวกัน**
+  bucket ต่อ IP ที่ตั้งไว้แน่นแบบรหัสผ่าน (20/15 นาที) จะล็อกทั้งออฟฟิศ — พาสคีย์เลยใช้
+  `passkeyPerIp` ที่หลวมกว่ามาก เพราะมันเดาไม่ได้อยู่แล้ว ไม่มี brute force ให้หน่วง
 - **Tailwind ห้ามเปิด preflight**: `app/globals.css` import แค่ theme + utilities
   · CSS เดิมอยู่ใน `app/app.css` ซึ่งถูก import เข้า `@layer app` ที่ประกาศไว้**ก่อน** layer ของ Tailwind
   แปลว่า utility ของ Tailwind ชนะ CSS เดิมได้ (จำเป็นสำหรับ shadcn) แต่ preflight ไม่มาล้าง `.btn` `.card` `.badge` ทิ้ง
@@ -74,6 +108,8 @@ deploy บน Vercel อ่านรายละเอียดฟีเจอ�
   · ข้อความ validate ของฟอร์มยังใช้ inline **ใต้ช่องที่ผิด** ด้วย `.hint.hint-error`
   (toast แจ้ง "จำนวนต้องมากกว่า 0" ทั้งที่ช่องอยู่ตรงหน้าคือแย่กว่า แถม toast ยังบังช่องนั้นอีก)
 - ก่อน commit: `npx tsc --noEmit` และ `npx next build` (ยังไม่มี automated test suite ถาวร)
+  · **เทสหน้า staff ต้องผ่านประตูพาสคีย์** — Playwright ใช้ virtual authenticator ผ่าน CDP
+  (`WebAuthn.addVirtualAuthenticator`) และต้องเปิดที่ `http://localhost:PORT` ไม่ใช่ IP
   · ถ้าแตะหน้าเจ้าหน้าที่ ให้เทสด้วยของจริง: ยก Postgres ในเครื่อง (`initdb` ต้องรันด้วย user ที่ไม่ใช่ root)
   ตั้ง `.env.local` ชี้ไปที่นั้น แล้ว `npm run db:migrate && npm run seed` — แล้วไล่ทุกหน้าทั้งบัญชี
   staff และ admin (สิทธิ์คนละชุด เห็นคนละเมนู)
@@ -103,7 +139,6 @@ npm run build             # production build
 ## สิ่งที่ยังไม่ได้ทำ (โอกาสพัฒนาต่อ)
 
 - ยังไม่ได้ย่อรูปก่อนอัปโหลด (รูป 2MB กิน bandwidth และ Blob quota เร็ว)
-- ยังไม่มี data retention / auto-delete policy ตาม PDPA (ประกาศระบุไว้ว่าเก็บ 2 ปีหลังยืมครั้งสุดท้าย แต่ยังไม่มีระบบลบอัตโนมัติ)
 - ยังไม่มี automated test suite
 - ยังไม่รองรับหลายภาษา (UI เป็นภาษาไทยล้วน)
 - ข้อมูลอยู่บนเซิร์ฟเวอร์นอกประเทศไทย (Neon/Vercel) — ถ้าต้องการให้อยู่ในไทยตาม PDPA

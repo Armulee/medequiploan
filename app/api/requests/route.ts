@@ -8,6 +8,7 @@ import { CONSENT_VERSION } from '@/lib/consent';
 import { logAction } from '@/lib/audit';
 import { saveUpload } from '@/lib/storage';
 import { RULES, clientIp, hit, sweepExpired, tooManyRequests } from '@/lib/rate-limit';
+import { requireHuman } from '@/lib/turnstile';
 
 // PUBLIC: submit a borrow request without logging in (spec 4.3).
 export const POST = route(async (req: Request) => {
@@ -23,6 +24,10 @@ export const POST = route(async (req: Request) => {
 
   const form = await req.formData();
   const str = (k: string) => String(form.get(k) ?? '').trim();
+
+  // Before anything is validated or written: a bot that cannot solve the
+  // challenge should not get as far as costing a borrower row or a photo.
+  await requireHuman(form.get('turnstile_token'), ip);
 
   const firstName = str('first_name');
   const lastName = str('last_name');

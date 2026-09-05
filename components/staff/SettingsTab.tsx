@@ -1,12 +1,15 @@
 'use client';
 
-import { KeyRound, UserCog } from 'lucide-react';
-import { useState } from 'react';
+import { Fingerprint, KeyRound, Trash2, UserCog } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { apiJson } from '@/app/lib/api';
+import Dialog, { DialogActions } from '@/components/Dialog';
+import { api, apiJson } from '@/app/lib/api';
+import { thDateTime } from '@/app/lib/format';
 import { useSession } from '@/app/staff/SessionContext';
 import { MIN_PASSWORD } from '@/lib/password';
-import type { SessionUser } from '@/app/lib/types';
+import { passkeyError } from './PasskeySetup';
+import type { PasskeyInfo, SessionUser } from '@/app/lib/types';
 
 /**
  * Your own account, and nothing else. Role and active status are an admin's
@@ -14,7 +17,7 @@ import type { SessionUser } from '@/app/lib/types';
  * taking the id from the session rather than the request.
  */
 export default function SettingsTab({ user }: { user: SessionUser }) {
-  const { setUser } = useSession();
+  const { setUser, refresh } = useSession();
 
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username);
@@ -111,6 +114,8 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
         </button>
       </form>
 
+      <PasskeyCard onChanged={refresh} />
+
       <form
         className="card"
         onSubmit={(e) => {
@@ -154,7 +159,7 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
               value={next}
               onChange={(e) => setNext(e.target.value)}
               autoComplete="new-password"
-              minLength={8}
+              minLength={MIN_PASSWORD}
               required
             />
             <div className="hint">อย่างน้อย {MIN_PASSWORD} ตัวอักษร · ห้ามมีชื่อผู้ใช้อยู่ในนั้น</div>
@@ -167,7 +172,7 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
               value={again}
               onChange={(e) => setAgain(e.target.value)}
               autoComplete="new-password"
-              minLength={8}
+              minLength={MIN_PASSWORD}
               required
             />
           </div>
@@ -179,4 +184,155 @@ export default function SettingsTab({ user }: { user: SessionUser }) {
       </form>
     </>
   );
+}
+
+/**
+ * The devices that can sign in as you.
+ *
+ * Adding a second one is the thing that keeps a lost phone from becoming a
+ * support call, so it is a plain button rather than something buried. The
+ * last one cannot be removed here — the server refuses it, because an account
+ * with no passkey and no known password is locked out until an admin resets
+ * it.
+ */
+function PasskeyCard({ onChanged }: { onChanged: () => Promise<void> }) {
+  const [list, setList] = useState<PasskeyInfo[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState<PasskeyInfo | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const d = await api<{ passkey_list: PasskeyInfo[] }>('/api/auth/me');
+      setList(d.passkey_list ?? []);
+    } catch {
+      setList([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function add() {
+    setBusy(true);
+    try {
+      const { startRegistration } = await import('@simplewebauthn/browser');
+      const start = await api<{
+        options: Parameters<typeof startRegistration>[0]['optionsJSON'];
+        challenge_id: string;
+      }>('/api/auth/passkey/register');
+      const response = await startRegistration({ optionsJSON: start.options });
+      await apiJson('/api/auth/passkey/register', 'POST', {
+        challenge_id: start.challenge_id,
+        response,
+        label: deviceGuess(),
+      });
+      toast.success('เพิ่มพาสคีย์บนอุปกรณ์นี้แล้ว');
+      await load();
+      await onChanged();
+    } catch (e) {
+      toast.error(passkeyError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(pk: PasskeyInfo) {
+    try {
+      await apiJson(`/api/auth/passkey/${pk.passkey_id}`, 'DELETE');
+      toast.success(`ลบพาสคีย์ "${pk.label}" แล้ว`);
+      await load();
+      await onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'ลบไม่สำเร็จ');
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  return (
+    <div className="card">
+      <div className="card-head">
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+          <Fingerprint size={20} color="var(--orange-dark)" />
+          พาสคีย์ของฉัน
+        </h2>
+        <button className="btn btn-outline" onClick={() => void add()} disabled={busy}>
+          {busy ? 'กำลังเพิ่ม...' : '+ เพิ่มอุปกรณ์'}
+        </button>
+      </div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+        เพิ่มไว้มากกว่าหนึ่งเครื่อง เผื่อเครื่องหนึ่งหายหรือพัง จะได้ไม่ต้องรอแอดมินรีเซ็ตให้
+      </p>
+
+      {list === null ? (
+        <div className="empty-state">กำลังโหลด...</div>
+      ) : list.length === 0 ? (
+        <div className="empty-state">ยังไม่มีพาสคีย์</div>
+      ) : (
+        <div>
+          {list.map((pk) => (
+            <div className="passkey-row" key={pk.passkey_id}>
+              <div>
+                <div className="title">
+                  <Fingerprint size={16} color="var(--orange-dark)" />
+                  {pk.label}
+                  {pk.backed_up && <span className="badge badge-approved">ซิงก์ข้ามเครื่อง</span>}
+                </div>
+                <div className="sub">
+                  เพิ่มเมื่อ {thDateTime(pk.created_at)}
+                  {pk.last_used_at ? ` · ใช้ล่าสุด ${thDateTime(pk.last_used_at)}` : ' · ยังไม่เคยใช้'}
+                </div>
+              </div>
+              {list.length > 1 && (
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setRemoving(pk)}
+                  aria-label={`ลบพาสคีย์ ${pk.label}`}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {removing && (
+        <Dialog title="ลบพาสคีย์" onClose={() => setRemoving(null)}>
+          <div className="confirm-summary">
+            ต้องการลบพาสคีย์
+            <br />
+            <strong>{removing.label}</strong>
+            <br />
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              อุปกรณ์เครื่องนั้นจะเข้าสู่ระบบไม่ได้อีก · เหลืออีก {list ? list.length - 1 : 0} อัน
+            </span>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void remove(removing);
+            }}
+          >
+            <DialogActions confirmLabel="ยืนยันลบ" onCancel={() => setRemoving(null)} danger />
+          </form>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A default label so the list is not three rows all called the same thing.
+ * Only a hint from the user agent — the person can be more specific by
+ * enrolling from the first-run screen, which asks.
+ */
+function deviceGuess(): string {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  if (/iPhone|iPad/.test(ua)) return 'iPhone/iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Macintosh/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'อุปกรณ์ของฉัน';
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
 import ConsentNotice from '@/components/ConsentNotice';
+import Turnstile, { turnstileOn } from '@/components/Turnstile';
 import { Check, ChevronLeft } from 'lucide-react';
 import { api, apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
@@ -34,12 +35,17 @@ export default function RequestPage() {
   const [consent, setConsent] = useState(false);
   const [idCard, setIdCard] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
+  // Empty until the challenge is solved, and back to empty when it expires.
+  // Only meaningful when Turnstile is configured at all.
+  const [human, setHuman] = useState('');
+  const [challengeRound, setChallengeRound] = useState(0);
 
   useEffect(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
       .then((d) => setEquipment(d.equipment))
       .catch(() => setError('ไม่สามารถโหลดรายการอุปกรณ์ได้ กรุณารีเฟรชหน้าอีกครั้ง'));
   }, []);
+
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -76,6 +82,7 @@ export default function RequestPage() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
       fd.append('consent', 'true');
+      if (human) fd.append('turnstile_token', human);
       fd.append('id_card_photo', idCard);
       if (photo) fd.append('illness_photo', photo);
 
@@ -84,6 +91,9 @@ export default function RequestPage() {
       setRequestId(res.request.request_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่');
+      // The token is spent whether or not the rest of the request was valid,
+      // so the next attempt needs a fresh challenge.
+      setChallengeRound((n) => n + 1);
       setSubmitting(false);
     }
   }
@@ -254,8 +264,18 @@ export default function RequestPage() {
 
               <ConsentNotice checked={consent} onChange={setConsent} />
 
-              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-                {submitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอยืม'}
+              <Turnstile onToken={setHuman} resetSignal={challengeRound} />
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={submitting || (turnstileOn && !human)}
+              >
+                {submitting
+                  ? 'กำลังส่งคำขอ...'
+                  : turnstileOn && !human
+                    ? 'กำลังตรวจสอบว่าไม่ใช่บอท...'
+                    : 'ส่งคำขอยืม'}
               </button>
             </form>
           </div>

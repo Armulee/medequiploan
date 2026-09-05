@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import { del, head, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
 import sharp from 'sharp';
 
 // ID-card and illness photos are health data. They are stored under an
@@ -31,6 +31,23 @@ const localRoot = path.join(process.cwd(), 'uploads');
 export type Folder = 'id_cards' | 'illness_photos' | 'equipment';
 
 /**
+ * Which folders are stored as private blobs.
+ *
+ * Everything used to be `access: 'public'`, with security resting entirely on
+ * a 64-bit random key in the URL. That is fine until the URL escapes — a log
+ * line, an error report, a screenshot, a Referer — and then the ID card of a
+ * named person is readable by anyone on the internet, permanently, with no way
+ * to revoke it. Private blobs are fetched with the store's token, so a leaked
+ * URL is worth nothing on its own.
+ *
+ * Equipment photographs stay public: they are catalogue pictures shown on the
+ * public landing page, and serving them through a signed fetch would put every
+ * home-page image through a function for no benefit.
+ */
+const isPrivate = (folder: Folder) => folder !== 'equipment';
+const folderOf = (id: string) => id.split('/')[0] as Folder;
+
+/**
  * The extension comes from the sniffed MIME type, never from the uploaded
  * filename. The old code took `path.extname(file.originalname)` verbatim, so a
  * file claiming to be an image but named `x.html` was stored as .html and later
@@ -55,7 +72,7 @@ export async function saveUpload(folder: Folder, file: File): Promise<string> {
 
   if (useBlob()) {
     await put(id, bytes, {
-      access: 'public', // unguessable key; access is gated by /api/files/[id]
+      access: isPrivate(folder) ? 'private' : 'public',
       contentType: 'image/webp',
       addRandomSuffix: false,
     });
@@ -106,10 +123,14 @@ export async function readUpload(
 
   if (useBlob()) {
     try {
-      const meta = await head(blobUrl(id));
-      const res = await fetch(meta.url);
-      if (!res.ok || !res.body) return null;
-      return { body: res.body, contentType: meta.contentType || 'application/octet-stream' };
+      // A private blob is read with the store's token rather than by URL, so
+      // knowing the path is not enough to fetch it.
+      const result = await get(id, { access: isPrivate(folderOf(id)) ? 'private' : 'public' });
+      if (!result || !result.stream) return null;
+      return {
+        body: result.stream,
+        contentType: result.blob.contentType || 'application/octet-stream',
+      };
     } catch {
       return null;
     }
@@ -128,13 +149,8 @@ export async function readUpload(
 
 export async function deleteUpload(id: string): Promise<void> {
   if (useBlob()) {
-    await del(blobUrl(id)).catch(() => {});
+    await del(id).catch(() => {});
   } else {
     await fs.unlink(path.join(localRoot, id)).catch(() => {});
   }
-}
-
-function blobUrl(id: string): string {
-  const base = process.env.BLOB_PUBLIC_BASE_URL;
-  return base ? `${base.replace(/\/$/, '')}/${id}` : id;
 }

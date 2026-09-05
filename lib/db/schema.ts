@@ -61,6 +61,16 @@ export const borrowers = pgTable('borrowers', {
   verified: boolean('verified').notNull().default(false),
   selfRegistered: boolean('self_registered').notNull().default(false),
   registeredBy: varchar('registered_by', { length: 16 }),
+  /**
+   * When this borrower's personal data was cleared under the retention policy.
+   *
+   * Null for everyone still on file. The row itself is never deleted — every
+   * loan, return and audit entry refers to the borrower id, and removing it
+   * would turn the history into dangling references. What is cleared is
+   * everything that makes the row a person; this column is both the flag that
+   * says so and the evidence that the notice's promise was kept.
+   */
+  anonymisedAt: timestamp('anonymised_at', { withTimezone: true }),
 });
 
 export const equipment = pgTable('equipment', {
@@ -161,6 +171,56 @@ export const stockAdjustments = pgTable('stock_adjustments', {
 });
 
 /**
+ * A passkey (WebAuthn credential) belonging to one staff account.
+ *
+ * Only the PUBLIC key is here. A stolen database gives an attacker nothing to
+ * sign with, which is the difference from a TOTP secret — that one is shared,
+ * so a copy of the table is a copy of the second factor.
+ */
+export const passkeys = pgTable('passkeys', {
+  passkeyId: seqId('passkey_id', 'K', 'passkey_seq'),
+  userId: varchar('user_id', { length: 16 })
+    .notNull()
+    .references(() => users.userId),
+  /** Base64url credential id, as the authenticator reports it. */
+  credentialId: text('credential_id').notNull().unique(),
+  publicKey: text('public_key').notNull(),
+  /**
+   * Signature counter. Authenticators that keep one increment it every use, so
+   * a replayed assertion shows up as a counter that did not move. Passkeys
+   * synced through iCloud or Google leave it at zero forever, so a stalled
+   * counter cannot be treated as proof of anything on its own.
+   */
+  counter: integer('counter').notNull().default(0),
+  /** 'platform' (Face ID, Windows Hello) or 'cross-platform' (a security key). */
+  deviceType: varchar('device_type', { length: 32 }).notNull().default(''),
+  /** True when the credential is synced across the holder's devices. */
+  backedUp: boolean('backed_up').notNull().default(false),
+  /** What the person called it, so they can tell two of their devices apart. */
+  label: varchar('label', { length: 64 }).notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+});
+
+/**
+ * In-flight WebAuthn challenges.
+ *
+ * In Postgres rather than in memory for the same reason the rate limiter is:
+ * each serverless invocation may be a different instance, so a challenge
+ * issued by one and verified by another has to be somewhere both can see.
+ * Single-use and short-lived — a challenge that could be replayed is not a
+ * challenge.
+ */
+export const webauthnChallenges = pgTable('webauthn_challenges', {
+  challengeId: varchar('challenge_id', { length: 64 }).primaryKey(),
+  challenge: text('challenge').notNull(),
+  /** Set when enrolling (we know whose account); null when signing in (we do not yet). */
+  userId: varchar('user_id', { length: 16 }),
+  purpose: varchar('purpose', { length: 16 }).notNull(), // 'register' | 'login'
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
+/**
  * Fixed-window counters for rate limiting.
  *
  * Kept in Postgres rather than process memory because each serverless
@@ -182,3 +242,5 @@ export type BorrowRequest = typeof requests.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type StockAdjustment = typeof stockAdjustments.$inferSelect;
 export type RateLimit = typeof rateLimits.$inferSelect;
+export type Passkey = typeof passkeys.$inferSelect;
+export type WebauthnChallenge = typeof webauthnChallenges.$inferSelect;

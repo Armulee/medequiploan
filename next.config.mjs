@@ -17,21 +17,30 @@
 // weakening the header that actually ships.
 const dev = process.env.NODE_ENV !== 'production';
 
+// Cloudflare Turnstile, when it is configured. Only these exact directives —
+// the challenge loads a script and renders itself in an iframe — and only when
+// a site key exists, so a deployment without it keeps the tighter policy.
+const turnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+  ? ' https://challenges.cloudflare.com'
+  : '';
+
 const csp = [
   "default-src 'self'",
   // Next's inline bootstrap and the landing page's JSON-LD need unsafe-inline.
   // unsafe-eval is development only — see above.
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' 'unsafe-inline'${turnstile}${dev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   // blob: is the local preview of a photo the person just picked.
   "img-src 'self' data: blob:",
   // The dev server's hot reload talks over a websocket to the same origin.
-  `connect-src 'self'${dev ? ' ws: wss:' : ''}`,
+  `connect-src 'self'${turnstile}${dev ? ' ws: wss:' : ''}`,
   "form-action 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
+  // The challenge itself renders in an iframe from Cloudflare.
+  `frame-src 'self'${turnstile}`,
   'upgrade-insecure-requests',
 ].join('; ');
 

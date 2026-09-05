@@ -5,6 +5,7 @@ import { ApiError, json, route } from '@/lib/api';
 import { nationalIdHash } from '@/lib/crypto';
 import { isValidThaiNationalId } from '@/lib/validate';
 import { RULES, clientIp, hit, sweepExpired, tooManyRequests } from '@/lib/rate-limit';
+import { requireHuman } from '@/lib/turnstile';
 import { displayStatus } from '@/lib/borrow';
 
 /**
@@ -24,10 +25,18 @@ export const POST = route(async (req: Request) => {
 
   // Unauthenticated and keyed on a guessable-ish number, so the throttle is
   // what stops it being walked. Same bucket shape as the other public route.
-  const limit = await hit(`tracking:ip:${clientIp(req)}`, RULES.trackingPerIp);
+  const ip = clientIp(req);
+  const limit = await hit(`tracking:ip:${ip}`, RULES.trackingPerIp);
   if (!limit.allowed) throw tooManyRequests(limit.retryAfterSeconds);
 
-  const body = (await req.json().catch(() => ({}))) as { national_id?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    national_id?: string;
+    turnstile_token?: string;
+  };
+
+  // This endpoint answers questions about a national ID. Rate limiting alone
+  // only slows a sweep down; the challenge makes an automated one impractical.
+  await requireHuman(body.turnstile_token, ip);
   const nationalId = String(body.national_id ?? '').replace(/\D/g, '');
 
   if (!isValidThaiNationalId(nationalId)) {

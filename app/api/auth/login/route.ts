@@ -5,6 +5,7 @@ import { users } from '@/lib/db/schema';
 import { ApiError, json, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
 import { saveSession, type SessionUser } from '@/lib/session';
+import { passkeyCount } from '@/lib/webauthn';
 import { RULES, clientIp, hit, reset, sweepExpired, tooManyRequests } from '@/lib/rate-limit';
 
 export const POST = route(async (req: Request) => {
@@ -57,6 +58,19 @@ export const POST = route(async (req: Request) => {
   const ok = await bcrypt.compare(password, hash);
   if (!found || !found.active || !ok) {
     throw new ApiError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 401);
+  }
+
+  // Once an account holds a passkey, its password is no longer a way in. It
+  // stays only as the bootstrap credential for enrolling the first one, and
+  // as what an admin reset hands out — leaving it live afterwards would keep
+  // the phishable path open beside the unphishable one, and an attacker
+  // always picks the phishable one.
+  const enrolled = await passkeyCount(found.userId);
+  if (enrolled > 0) {
+    throw new ApiError(
+      'บัญชีนี้ตั้งพาสคีย์ไว้แล้ว กรุณาเข้าสู่ระบบด้วยพาสคีย์ · ถ้าอุปกรณ์หาย ให้แอดมินรีเซ็ตพาสคีย์ให้',
+      403
+    );
   }
 
   const user: SessionUser = {

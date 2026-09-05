@@ -5,6 +5,16 @@ export type SessionUser = {
   name: string;
 };
 
+/** One enrolled passkey, as the account owner sees it. */
+export type PasskeyInfo = {
+  passkey_id: string;
+  label: string;
+  device_type: string;
+  backed_up: boolean;
+  created_at: string;
+  last_used_at: string | null;
+};
+
 /** A staff account as /api/users returns it — never a password hash. */
 export type StaffUser = {
   user_id: string;

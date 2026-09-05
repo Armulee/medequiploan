@@ -38,6 +38,16 @@ export const RULES = {
    * plausible number of real people mistyping their own password reaches it.
    */
   loginPerUserGlobal: { limit: 100, windowSeconds: 60 * 60 },
+  /**
+   * Passkey sign-ins from one address, counting only the ones that failed.
+   *
+   * Far looser than the password buckets on purpose. A passkey cannot be
+   * guessed — there is no brute force to slow down, only a signature check to
+   * keep from being used as a way to burn database reads. The tight password
+   * numbers would be actively harmful here: a whole office signs in from one
+   * NAT address, and twenty attempts per quarter hour is a normal morning.
+   */
+  passkeyPerIp: { limit: 60, windowSeconds: 15 * 60 },
   /** Public borrow requests, which create borrower rows and upload photos. */
   publicRequestPerIp: { limit: 5, windowSeconds: 60 * 60 },
   /**

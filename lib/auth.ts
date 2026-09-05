@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { users } from './db/schema';
 import { ApiError } from './errors';
@@ -53,17 +53,19 @@ export async function requireActiveUser(): Promise<SessionUser> {
 }
 
 /**
- * Invalidate every session of one account.
+ * The same check, but as a question rather than a demand.
  *
- * Called when the password changes, when the account is closed, and when its
- * passkeys are reset — each of those is someone saying "whoever is holding a
- * cookie for this account should stop being able to use it".
+ * For `GET /api/auth/me`, which is asking "is anyone signed in?" — a revoked
+ * cookie is a legitimate answer of "no", not an error. It has to run the full
+ * check rather than read the cookie: the staff app decides whether to render
+ * the whole application from this one response, so trusting the snapshot here
+ * would put a closed account back inside the app until its first data fetch
+ * failed.
  */
-export async function revokeSessions(userId: string): Promise<number> {
-  const [row] = await db
-    .update(users)
-    .set({ sessionVersion: sql`${users.sessionVersion} + 1` })
-    .where(eq(users.userId, userId))
-    .returning({ v: users.sessionVersion });
-  return row?.v ?? 0;
+export async function activeUserOrNull(): Promise<SessionUser | null> {
+  try {
+    return await requireActiveUser();
+  } catch {
+    return null;
+  }
 }

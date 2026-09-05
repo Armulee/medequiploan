@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Alert from '@/components/Alert';
 import { ChevronLeft } from 'lucide-react';
+import Turnstile, { turnstileOn } from '@/components/Turnstile';
 import { apiJson } from '@/app/lib/api';
 import { isValidThaiNationalId, statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
 import { takeNationalId } from '@/app/lib/handoff';
@@ -40,23 +41,38 @@ export default function TrackingPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const autoRan = useRef(false);
+  const [human, setHuman] = useState('');
+  const [challengeRound, setChallengeRound] = useState(0);
+  // An ID handed over from the request form, held until the challenge is
+  // solved. Searching before then would spend an empty token and be refused.
+  const [pending, setPending] = useState('');
 
-  async function lookup(id: string) {
-    setError('');
-    setResult(null);
-    if (!isValidThaiNationalId(id)) {
-      setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (13 หลัก)');
-      return;
-    }
-    setBusy(true);
-    try {
-      setResult(await apiJson<Result>('/api/tracking', 'POST', { national_id: id }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'ค้นหาไม่สำเร็จ กรุณาลองใหม่');
-    } finally {
-      setBusy(false);
-    }
-  }
+  const lookup = useCallback(
+    async (id: string, token: string) => {
+      setError('');
+      setResult(null);
+      if (!isValidThaiNationalId(id)) {
+        setError('เลขบัตรประชาชนไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (13 หลัก)');
+        return;
+      }
+      setBusy(true);
+      try {
+        setResult(
+          await apiJson<Result>('/api/tracking', 'POST', {
+            national_id: id,
+            ...(token ? { turnstile_token: token } : {}),
+          })
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'ค้นหาไม่สำเร็จ กรุณาลองใหม่');
+      } finally {
+        // Spent either way — the next search needs a new one.
+        setChallengeRound((n) => n + 1);
+        setBusy(false);
+      }
+    },
+    []
+  );
 
   // Arriving straight from a submitted request: fill in and search once, then
   // the handed-over value is gone.
@@ -66,10 +82,19 @@ export default function TrackingPage() {
     const handed = takeNationalId();
     if (handed) {
       setNationalId(handed);
-      void lookup(handed);
+      setPending(handed);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The handed-over search runs as soon as it can: immediately when there is
+  // no challenge to solve, or the moment the widget produces a token.
+  useEffect(() => {
+    if (!pending) return;
+    if (turnstileOn && !human) return;
+    setPending('');
+    void lookup(pending, human);
+  }, [pending, human, lookup]);
 
   const empty = result && result.requests.length === 0 && result.loans.length === 0;
 
@@ -99,7 +124,7 @@ export default function TrackingPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void lookup(nationalId);
+              void lookup(nationalId, human);
             }}
           >
             <div className="field">
@@ -115,8 +140,18 @@ export default function TrackingPage() {
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-              {busy ? 'กำลังค้นหา...' : 'ค้นหาคำขอของฉัน'}
+            <Turnstile onToken={setHuman} resetSignal={challengeRound} />
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={busy || (turnstileOn && !human)}
+            >
+              {busy
+                ? 'กำลังค้นหา...'
+                : turnstileOn && !human
+                  ? 'กำลังตรวจสอบว่าไม่ใช่บอท...'
+                  : 'ค้นหาคำขอของฉัน'}
             </button>
           </form>
         </div>

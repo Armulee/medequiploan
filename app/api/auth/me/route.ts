@@ -1,14 +1,42 @@
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { passkeys, users } from '@/lib/db/schema';
 import { ApiError, json, requireAuth, route } from '@/lib/api';
 import { logAction } from '@/lib/audit';
 import { passwordProblem } from '@/lib/password';
 import { RULES, hit } from '@/lib/rate-limit';
-import { currentUser, saveSession } from '@/lib/session';
+import { activeUserOrNull } from '@/lib/auth';
+import { saveSession } from '@/lib/session';
 
-export const GET = route(async () => json({ user: await currentUser() }));
+/**
+ * Who is signed in, and whether they still owe the system a passkey.
+ *
+ * The count is what the staff app gates on: an account with none is sent to
+ * the enrolment screen and cannot reach anything else, which is how "set one
+ * up at first sign-in" is enforced rather than merely suggested.
+ */
+export const GET = route(async () => {
+  // The full check, not the cookie: a closed account or a bumped session
+  // version has to read as signed out here, or the frame lets it back in.
+  const user = await activeUserOrNull();
+  if (!user) return json({ user: null, passkeys: 0 });
+
+  const list = await db
+    .select({
+      passkey_id: passkeys.passkeyId,
+      label: passkeys.label,
+      device_type: passkeys.deviceType,
+      backed_up: passkeys.backedUp,
+      created_at: passkeys.createdAt,
+      last_used_at: passkeys.lastUsedAt,
+    })
+    .from(passkeys)
+    .where(eq(passkeys.userId, user.user_id))
+    .orderBy(passkeys.createdAt);
+
+  return json({ user, passkeys: list.length, passkey_list: list });
+});
 
 /**
  * Staff changing their own account, and only their own — the id comes from
