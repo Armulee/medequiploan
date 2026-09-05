@@ -21,6 +21,12 @@ export const RULES = {
   /** Public borrow requests, which create borrower rows and upload photos. */
   publicRequestPerIp: { limit: 5, windowSeconds: 60 * 60 },
   /**
+   * Wrong current-password attempts while changing one's own credentials.
+   * A logged-in session already proves identity, so this only has to stop a
+   * borrowed unlocked screen being used to guess the password.
+   */
+  accountChangePerUser: { limit: 5, windowSeconds: 15 * 60 },
+  /**
    * Status lookups. Unauthenticated and keyed on a national ID, so without a
    * ceiling it could be walked; 15 an hour is far more than anyone checking
    * their own request needs.

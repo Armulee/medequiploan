@@ -8,8 +8,10 @@ import HistoryTab from '@/components/staff/HistoryTab';
 import LoginView from '@/components/staff/LoginView';
 import RegisterTab from '@/components/staff/RegisterTab';
 import RequestsTab from '@/components/staff/RequestsTab';
+import SettingsTab from '@/components/staff/SettingsTab';
 import StockTab from '@/components/staff/StockTab';
 import UsersTab from '@/components/staff/UsersTab';
+import { Toaster } from '@/components/ui/toaster';
 import { SessionProvider, useSession } from './SessionContext';
 
 function StaffApp() {
@@ -51,6 +53,7 @@ function StaffApp() {
       )}
       {tab === 'history' && <HistoryTab isAdmin={user.role === 'admin'} />}
       {tab === 'users' && user.role === 'admin' && <UsersTab currentUser={user} />}
+      {tab === 'settings' && <SettingsTab user={user} />}
     </AppShell>
   );
 }
@@ -59,6 +62,9 @@ export default function StaffPage() {
   return (
     <SessionProvider>
       <StaffApp />
+      {/* Mounted here rather than in the root layout: only the staff app
+          raises toasts, so the public pages do not ship sonner. */}
+      <Toaster />
     </SessionProvider>
   );
 }

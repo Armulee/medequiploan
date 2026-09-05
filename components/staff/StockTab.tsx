@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
 import Dialog, { DialogActions } from '@/components/Dialog';
-import Icon from '@/components/Icon';
+import { TriangleAlert } from 'lucide-react';
 import { api, apiJson } from '@/app/lib/api';
 import type { Equipment } from '@/app/lib/types';
 
@@ -89,7 +89,7 @@ export default function StockTab({
                     {e.name}
                     {e.low_stock && (
                       <span className="badge badge-low" style={{ marginLeft: 8 }}>
-                        <Icon name="alert" size={12} /> สต็อกใกล้หมด
+                        <TriangleAlert size={12} /> สต็อกใกล้หมด
                       </span>
                     )}
                   </div>

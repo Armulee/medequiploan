@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Alert from '@/components/Alert';
 import Dialog, { DialogActions } from '@/components/Dialog';
-import Icon from '@/components/Icon';
+import { Search } from 'lucide-react';
 import { api, apiJson } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
 import type { SessionUser } from '@/app/lib/types';
@@ -105,7 +105,7 @@ export default function UsersTab({ currentUser }: { currentUser: SessionUser }) 
         <div className="toolbar">
           <div className="field">
             <label htmlFor="u_search">
-              <Icon name="search" size={15} /> ค้นหา
+              <Search size={15} /> ค้นหา
             </label>
             <input
               id="u_search"

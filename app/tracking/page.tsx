@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import Alert from '@/components/Alert';
-import Icon from '@/components/Icon';
+import { ChevronLeft } from 'lucide-react';
 import { apiJson } from '@/app/lib/api';
 import { isValidThaiNationalId, statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
 import { takeNationalId } from '@/app/lib/handoff';
@@ -84,7 +84,7 @@ export default function TrackingPage() {
 
       <div className="container" style={{ paddingTop: 20 }}>
         <Link href="/" className="back-link">
-          <Icon name="chevron-left" size={20} strokeWidth={2.5} />
+          <ChevronLeft size={20} strokeWidth={2.5} />
           กลับหน้าแรก
         </Link>
 

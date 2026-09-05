@@ -47,3 +47,14 @@ export async function currentUser(): Promise<SessionUser | null> {
   const session = await getSession();
   return session.user ?? null;
 }
+
+/**
+ * Rewrite the signed cookie after the account behind it changed. Without this
+ * the header keeps showing the old name and username until the next sign-in,
+ * because the session is a snapshot rather than a lookup.
+ */
+export async function saveSession(user: SessionUser): Promise<void> {
+  const session = await getSession();
+  session.user = user;
+  await session.save();
+}

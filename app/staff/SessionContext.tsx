@@ -9,6 +9,8 @@ type Ctx = {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** After the account behind the session changes its own name or username. */
+  setUser: (user: SessionUser) => void;
 };
 
 const SessionCtx = createContext<Ctx | null>(null);
@@ -35,7 +37,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SessionCtx.Provider value={{ user, loading, login, logout }}>{children}</SessionCtx.Provider>
+    <SessionCtx.Provider value={{ user, loading, login, logout, setUser }}>
+      {children}
+    </SessionCtx.Provider>
   );
 }
 

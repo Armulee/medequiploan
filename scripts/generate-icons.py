@@ -1,7 +1,7 @@
 """Generate the app icons from the brand mark.
 
 The mark is the same heart used everywhere in the UI — the feather-style path
-in components/Icon.tsx — on the header's brand gradient (--orange to
+in components/Logo.tsx — on the header's brand gradient (--orange to
 --orange-dark at 135deg). Keeping it generated rather than hand-drawn means the
 icons cannot drift from the icon set the pages actually render.
 
@@ -25,12 +25,12 @@ ORANGE = (255, 108, 29)       # --orange   #FF6C1D
 ORANGE_DARK = (224, 86, 15)   # --orange-dark #E0560F
 WHITE = (255, 255, 255)
 
-# components/Icon.tsx, PATHS.heart — a 24x24 viewBox.
+# components/Logo.tsx — the same 24x24 path the header and login screen draw.
 HEART = (
     "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2"
     "-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"
 )
-STROKE_UNITS = 2.0  # Icon.tsx default strokeWidth
+STROKE_UNITS = 2.0  # Logo.tsx default strokeWidth
 SS = 4              # supersample factor; PIL has no antialiased drawing
 
 

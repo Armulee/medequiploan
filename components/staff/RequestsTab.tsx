@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
 import Dialog, { DialogActions } from '@/components/Dialog';
-import Icon from '@/components/Icon';
+import { Phone } from 'lucide-react';
 import { api, apiJson } from '@/app/lib/api';
 import { statusBadgeClass, thDateTime } from '@/app/lib/format';
 import BorrowerDetail from './BorrowerDetail';
@@ -128,7 +128,7 @@ export default function RequestsTab({
                 </div>
                 {(r.borrower_phone || r.borrower_line_id) && (
                   <div className="sub contact-line">
-                    <Icon name="phone" size={14} />
+                    <Phone size={14} />
                     {r.borrower_phone ? <a href={`tel:${r.borrower_phone}`}>{r.borrower_phone}</a> : '-'}
                     {r.borrower_line_id ? ` · LINE: ${r.borrower_line_id}` : ''}
                   </div>

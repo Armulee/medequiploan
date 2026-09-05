@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
-import Icon from '@/components/Icon';
+import { ChevronLeft } from 'lucide-react';
 import { api } from '@/app/lib/api';
 import { statusBadgeClass, thDate, thDateTime } from '@/app/lib/format';
 import type { BorrowerFull, LoanRecord } from '@/app/lib/types';
@@ -38,7 +38,7 @@ export default function BorrowerDetail({
     return (
       <div className="card">
         <button className="back-link" onClick={onBack}>
-          <Icon name="chevron-left" size={20} strokeWidth={2.5} />
+          <ChevronLeft size={20} strokeWidth={2.5} />
           กลับ
         </button>
         <Alert kind="error">{error}</Alert>
@@ -60,7 +60,7 @@ export default function BorrowerDetail({
   return (
     <>
       <button className="back-link" onClick={onBack}>
-        <Icon name="chevron-left" size={20} strokeWidth={2.5} />
+        <ChevronLeft size={20} strokeWidth={2.5} />
         กลับ
       </button>
 

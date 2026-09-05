@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
 import ConsentNotice from '@/components/ConsentNotice';
-import Icon from '@/components/Icon';
+import { Check, ChevronLeft } from 'lucide-react';
 import { api, apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
 import { normaliseEmail, normalisePhone } from '@/lib/validate';
@@ -94,7 +94,7 @@ export default function RequestPage() {
 
       <div className="container" style={{ paddingTop: 20 }}>
         <Link href="/" className="back-link">
-          <Icon name="chevron-left" size={20} strokeWidth={2.5} />
+          <ChevronLeft size={20} strokeWidth={2.5} />
           กลับหน้าแรก
         </Link>
 
@@ -112,7 +112,7 @@ export default function RequestPage() {
                 margin: '0 auto 14px',
               }}
             >
-              <Icon name="check" size={28} stroke="var(--green)" strokeWidth={2.5} />
+              <Check size={28} color="var(--green)" strokeWidth={2.5} />
             </div>
             <h2>ส่งคำขอเรียบร้อยแล้ว</h2>
             <p style={{ color: 'var(--text-muted)' }}>

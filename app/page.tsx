@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Icon from '@/components/Icon';
+import { Clock, FileCheck, Package, Repeat, ChevronDown } from 'lucide-react';
 import HeroPhoto from '@/components/landing/HeroPhoto';
 import SiteHeader from '@/components/landing/SiteHeader';
 import StockCarousel from '@/components/landing/StockCarousel';
@@ -63,17 +63,17 @@ const FEATURES = [
   {
     // There is no registration step and the form never pre-fills — a repeat
     // borrower types everything again. The old copy promised both.
-    icon: 'requests',
+    Icon: FileCheck,
     title: 'ไม่ต้องลงทะเบียน',
     body: 'กรอกแบบฟอร์มแล้วส่งได้เลย ไม่ต้องสร้างบัญชี ไม่ต้องจำรหัสผ่าน',
   },
   {
-    icon: 'swap',
+    Icon: Repeat,
     title: 'ยืม-คืนสะดวก',
     body: 'ติดตามกำหนดคืนและสถานะอุปกรณ์ได้ตลอด ไม่ต้องกังวลลืมวันคืน',
   },
   {
-    icon: 'clock',
+    Icon: Clock,
     title: 'โปร่งใส ตรวจสอบได้',
     body: 'ทุกการยืม-คืนถูกบันทึกไว้เป็นประวัติ พร้อมผู้รับผิดชอบในทุกขั้นตอน',
   },
@@ -129,7 +129,7 @@ export default function LandingPage() {
             still works with no JavaScript. */}
         <a href="#stock" className="hero-cue">
           <span>เลื่อนลงเพื่อดูอุปกรณ์</span>
-          <Icon name="chevron-down" size={26} strokeWidth={2.5} />
+          <ChevronDown size={26} strokeWidth={2.5} />
         </a>
       </section>
 
@@ -138,7 +138,7 @@ export default function LandingPage() {
       <section className="stock-band" id="stock">
         <div className="hero-panel">
           <h3>
-            <Icon name="box" size={20} stroke="var(--orange-dark)" />
+            <Package size={20} color="var(--orange-dark)" />
             อุปกรณ์ที่พร้อมให้ยืมตอนนี้
           </h3>
           <StockCarousel />
@@ -166,7 +166,7 @@ export default function LandingPage() {
           {FEATURES.map((f) => (
             <div className="feature-card" key={f.title}>
               <div className="icon-wrap">
-                <Icon name={f.icon} size={24} />
+                <f.Icon size={24} />
               </div>
               <h3>{f.title}</h3>
               <p>{f.body}</p>

@@ -5,7 +5,7 @@ import type { Swiper as SwiperClass } from 'swiper';
 import { Autoplay, EffectFade } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import Alert from '@/components/Alert';
-import Icon from '@/components/Icon';
+import { ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { api } from '@/app/lib/api';
 import type { Equipment } from '@/app/lib/types';
 
@@ -169,7 +169,7 @@ export default function StockCarousel() {
                   {slug ? (
                     <Photo slug={slug} name={e.name} eager={i === 0} />
                   ) : (
-                    <Icon name="box" size={72} stroke="var(--border)" strokeWidth={1.5} />
+                    <Package size={72} color="var(--border)" strokeWidth={1.5} />
                   )}
                 </div>
                 <figcaption>
@@ -192,7 +192,7 @@ export default function StockCarousel() {
           onClick={steer(() => swiper?.slidePrev())}
           aria-label={`ก่อนหน้า: ${prev.name}`}
         >
-          <Icon name="chevron-left" size={24} strokeWidth={2.5} />
+          <ChevronLeft size={24} strokeWidth={2.5} />
         </button>
 
         <div className="stock-dots" role="tablist" aria-label="เลือกอุปกรณ์">
@@ -217,7 +217,7 @@ export default function StockCarousel() {
           onClick={steer(() => swiper?.slideNext())}
           aria-label={`ถัดไป: ${next.name}`}
         >
-          <Icon name="chevron-right" size={24} strokeWidth={2.5} />
+          <ChevronRight size={24} strokeWidth={2.5} />
         </button>
 
         <span className="stock-navlabel stock-navlabel-prev" aria-hidden="true">

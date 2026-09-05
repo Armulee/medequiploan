@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Icon from '@/components/Icon';
+import { Search } from 'lucide-react';
 import { api } from '@/app/lib/api';
 import type { BorrowerListItem } from '@/app/lib/types';
 
@@ -38,7 +38,7 @@ export default function BorrowerSearch({
     <>
       <div className="field">
         <label htmlFor="borrowerSearch">
-          <Icon name="search" size={15} /> ค้นหาผู้ยืม
+          <Search size={15} /> ค้นหาผู้ยืม
         </label>
         <input
           id="borrowerSearch"

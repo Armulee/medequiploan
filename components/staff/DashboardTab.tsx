@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
-import Icon from '@/components/Icon';
+import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { api } from '@/app/lib/api';
 import { thDate } from '@/app/lib/format';
 import MonthlyChart from './MonthlyChart';
@@ -98,7 +98,7 @@ export default function DashboardTab({ onJump }: { onJump: (j: DashboardJump) =>
 
       <div className="card">
         <h2>
-          <Icon name="alert" size={18} stroke="var(--red)" /> เกินกำหนดคืน
+          <TriangleAlert size={18} color="var(--red)" /> เกินกำหนดคืน
         </h2>
         {data.overdue.length === 0 ? (
           <div className="empty-state">ไม่มีรายการเกินกำหนด</div>
@@ -161,7 +161,7 @@ function StatTile({
     <>
       <div className="stat-label">
         {label}
-        {onClick && <Icon name="chevron-right" size={15} className="stat-arrow" />}
+        {onClick && <ChevronRight size={15} className="stat-arrow" />}
       </div>
       <div className="stat-value">
         {value.toLocaleString('th-TH')}

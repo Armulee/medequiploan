@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import Icon from '@/components/Icon';
+import Logo from '@/components/Logo';
 
 // The bar floats over the photograph with no background of its own, then
 // takes the page's background back as it starts to cover the headline.
@@ -44,7 +44,7 @@ export default function SiteHeader() {
       <div className="site-header-inner">
         <Link href="/" className="brand">
           <span className="logo-mark">
-            <Icon name="heart" size={24} />
+            <Logo size={24} />
           </span>
           ศูนย์ยืม-คืนกายอุปกรณ์
         </Link>

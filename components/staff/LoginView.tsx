@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import Alert from '@/components/Alert';
-import Icon from '@/components/Icon';
+import Logo from '@/components/Logo';
 import { useSession } from '@/app/staff/SessionContext';
 
 export default function LoginView() {
@@ -29,7 +29,7 @@ export default function LoginView() {
     <div className="login-wrap">
       <div className="login-card card">
         <div className="logo">
-          <Icon name="heart" size={28} />
+          <Logo size={28} />
         </div>
         <h1>ศูนย์ยืม-คืนกายอุปกรณ์</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: -8 }}>เข้าสู่ระบบสำหรับเจ้าหน้าที่</p>

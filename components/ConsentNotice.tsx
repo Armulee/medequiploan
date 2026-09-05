@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Icon from '@/components/Icon';
+import { ChevronLeft, ShieldCheck } from 'lucide-react';
 import { CONSENT_NOTICE } from '@/lib/consent';
 
 /**
@@ -27,11 +27,11 @@ export default function ConsentNotice({
     <div className="consent-box">
       <button type="button" className="consent-toggle" onClick={() => setOpen((v) => !v)}>
         <span className="consent-title">
-          <Icon name="shield" size={18} stroke="var(--orange-dark)" />
+          <ShieldCheck size={18} color="var(--orange-dark)" />
           {CONSENT_NOTICE.title}
         </span>
         <span className="consent-caret" data-open={open}>
-          <Icon name="chevron-left" size={18} strokeWidth={2.5} />
+          <ChevronLeft size={18} strokeWidth={2.5} />
         </span>
       </button>
 
