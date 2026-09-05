@@ -1,12 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import ConsentNotice from '@/components/ConsentNotice';
+import PhotoInput from '@/components/PhotoInput';
 import { apiForm } from '@/app/lib/api';
 import { isValidThaiNationalId } from '@/app/lib/format';
 import { normalisePhone } from '@/lib/validate';
-import { formatBytes, resizeImage } from '@/app/lib/resize-image';
 import type { BorrowerFull } from '@/app/lib/types';
 
 const EMPTY = {
@@ -20,7 +20,7 @@ const EMPTY = {
   illness_description: '',
 };
 
-type FieldError = 'national_id' | 'phone' | 'consent';
+type FieldError = 'national_id' | 'phone' | 'id_card' | 'consent';
 
 /**
  * Registering someone is the first half of lending to them, so this is a form
@@ -38,9 +38,8 @@ export default function RegisterForm({
   const [invalid, setInvalid] = useState<FieldError | null>(null);
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [idCard, setIdCard] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
-  const [photoNote, setPhotoNote] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const set =
     (k: keyof typeof EMPTY) =>
@@ -53,22 +52,23 @@ export default function RegisterForm({
 
     if (!isValidThaiNationalId(form.national_id)) return setInvalid('national_id');
     if (!normalisePhone(form.phone)) return setInvalid('phone');
+    if (!idCard) return setInvalid('id_card');
     if (!consent) return setInvalid('consent');
     setBusy(true);
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
       fd.append('consent', 'true');
+      fd.append('id_card_photo', idCard);
       if (photo) fd.append('illness_photo', photo);
       const res = await apiForm<{ borrower: BorrowerFull }>('/api/borrowers', fd);
       toast.success(
         `ลงทะเบียน ${res.borrower.first_name} ${res.borrower.last_name} แล้ว (รหัส ${res.borrower.borrower_id})`
       );
       setForm(EMPTY);
+      setIdCard(null);
       setPhoto(null);
-      setPhotoNote('');
       setConsent(false);
-      if (fileRef.current) fileRef.current.value = '';
       onRegistered(res.borrower);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'ลงทะเบียนไม่สำเร็จ');
@@ -152,35 +152,27 @@ export default function RegisterForm({
           <textarea id="reg_illness" value={form.illness_description} onChange={set('illness_description')} />
         </div>
 
-        <div className="field">
-          <label htmlFor="reg_illness_photo">ภาพประกอบอาการป่วย (ถ้ามี)</label>
-          <input
-            id="reg_illness_photo"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            ref={fileRef}
-            onChange={async (e) => {
-              const picked = e.target.files?.[0];
-              if (!picked) {
-                setPhoto(null);
-                setPhotoNote('');
-                return;
-              }
-              setPhotoNote('กำลังย่อรูป...');
-              const resized = await resizeImage(picked);
-              setPhoto(resized);
-              setPhotoNote(
-                resized.size < picked.size
-                  ? `ย่อรูปแล้ว ${formatBytes(picked.size)} → ${formatBytes(resized.size)}`
-                  : `ขนาดไฟล์ ${formatBytes(resized.size)}`
-              );
-            }}
-          />
-          <div className="hint">
-            {photoNote || 'ไม่บังคับ · เป็นข้อมูลสุขภาพ เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ'}
+        <PhotoInput
+          id="reg_id_card_photo"
+          label="รูปบัตรประชาชน"
+          required
+          file={idCard}
+          onPick={setIdCard}
+          hint="ถ่ายบัตรของผู้ยืม หรือเลือกรูปที่มีอยู่แล้ว · เก็บไว้ให้ตรวจสอบย้อนหลังได้"
+        />
+        {invalid === 'id_card' && (
+          <div className="field">
+            <div className="hint hint-error">กรุณาแนบรูปบัตรประชาชนของผู้ยืม</div>
           </div>
-        </div>
+        )}
+
+        <PhotoInput
+          id="reg_illness_photo"
+          label="ภาพประกอบอาการป่วย (ถ้ามี)"
+          file={photo}
+          onPick={setPhoto}
+          hint="ไม่บังคับ · เป็นข้อมูลสุขภาพ เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ"
+        />
 
         <ConsentNotice
           checked={consent}

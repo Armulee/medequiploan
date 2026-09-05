@@ -57,6 +57,17 @@ export const POST = route(async (req: Request) => {
   const [item] = await db.select().from(equipment).where(eq(equipment.equipmentId, equipmentId));
   if (!item) throw new ApiError('ไม่พบอุปกรณ์ที่เลือก', 404);
 
+  // Required: a staff member reads the card before approving, so a request
+  // without one cannot be decided and should not be accepted. Checked on the
+  // server, not only by the form, like every other rule here.
+  const idCard = form.get('id_card_photo');
+  if (!(idCard instanceof File) || idCard.size === 0) {
+    throw new ApiError('กรุณาแนบรูปบัตรประชาชน เจ้าหน้าที่ต้องใช้ตรวจสอบก่อนอนุมัติ');
+  }
+  const idCardId = await saveUpload('id_cards', idCard).catch((e) => {
+    throw new ApiError(e instanceof Error ? e.message : 'อัปโหลดรูปบัตรประชาชนไม่สำเร็จ');
+  });
+
   const photo = form.get('illness_photo');
   const photoId =
     photo instanceof File && photo.size > 0
@@ -81,6 +92,9 @@ export const POST = route(async (req: Request) => {
         email: email || existing.email,
         consentAcceptedAt: new Date(),
         consentVersion: CONSENT_VERSION,
+        // The new card photo replaces the one on file: it is the copy that
+        // was just consented to, and the old one has no reason to be kept.
+        idCardPhotoId: idCardId,
         ...(photoId ? { illnessPhotoId: photoId } : {}),
       })
       .where(eq(borrowers.borrowerId, borrowerId));
@@ -98,6 +112,7 @@ export const POST = route(async (req: Request) => {
         email,
         consentAcceptedAt: new Date(),
         consentVersion: CONSENT_VERSION,
+        idCardPhotoId: idCardId,
         illnessPhotoId: photoId,
         illnessDescription,
         verified: false,

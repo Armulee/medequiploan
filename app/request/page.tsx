@@ -10,7 +10,7 @@ import { isValidThaiNationalId } from '@/app/lib/format';
 import { normaliseEmail, normalisePhone } from '@/lib/validate';
 import { stashNationalId } from '@/app/lib/handoff';
 import { useRouter } from 'next/navigation';
-import { formatBytes, resizeImage } from '@/app/lib/resize-image';
+import PhotoInput from '@/components/PhotoInput';
 import type { Equipment } from '@/app/lib/types';
 
 export default function RequestPage() {
@@ -32,8 +32,8 @@ export default function RequestPage() {
     illness_description: '',
   });
   const [consent, setConsent] = useState(false);
+  const [idCard, setIdCard] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
-  const [photoNote, setPhotoNote] = useState('');
 
   useEffect(() => {
     api<{ equipment: Equipment[] }>('/api/equipment')
@@ -62,6 +62,10 @@ export default function RequestPage() {
       setError('อีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
       return;
     }
+    if (!idCard) {
+      setError('กรุณาแนบรูปบัตรประชาชน เจ้าหน้าที่ต้องใช้ตรวจสอบก่อนอนุมัติ');
+      return;
+    }
     if (!consent) {
       setError('กรุณาอ่านและยอมรับประกาศความเป็นส่วนตัว (PDPA) ก่อนส่งคำขอ');
       return;
@@ -72,6 +76,7 @@ export default function RequestPage() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v.trim()));
       fd.append('consent', 'true');
+      fd.append('id_card_photo', idCard);
       if (photo) fd.append('illness_photo', photo);
 
       const res = await apiForm<{ request: { request_id: string } }>('/api/requests', fd);
@@ -230,32 +235,22 @@ export default function RequestPage() {
                 />
               </div>
 
-              <div className="field">
-                <label htmlFor="illness_photo">ภาพประกอบอาการป่วย (ถ้ามี)</label>
-                <input
-                  id="illness_photo"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={async (e) => {
-                    const picked = e.target.files?.[0];
-                    if (!picked) {
-                      setPhoto(null);
-                      setPhotoNote('');
-                      return;
-                    }
-                    setPhotoNote('กำลังย่อรูป...');
-                    const resized = await resizeImage(picked);
-                    setPhoto(resized);
-                    setPhotoNote(
-                      resized.size < picked.size
-                        ? `ย่อรูปแล้ว ${formatBytes(picked.size)} → ${formatBytes(resized.size)}`
-                        : `ขนาดไฟล์ ${formatBytes(resized.size)}`
-                    );
-                  }}
-                />
-                {photoNote && <div className="hint">{photoNote}</div>}
-              </div>
+              <PhotoInput
+                id="id_card_photo"
+                label="รูปบัตรประชาชน"
+                required
+                file={idCard}
+                onPick={setIdCard}
+                hint="ถ่ายรูปบัตร หรือเลือกรูปที่มีอยู่แล้วก็ได้ · เจ้าหน้าที่ใช้ตรวจสอบตัวตนก่อนอนุมัติ และเห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ"
+              />
+
+              <PhotoInput
+                id="illness_photo"
+                label="ภาพประกอบอาการป่วย (ถ้ามี)"
+                file={photo}
+                onPick={setPhoto}
+                hint="ไม่บังคับ · ช่วยให้เจ้าหน้าที่เลือกอุปกรณ์ให้เหมาะกับอาการ"
+              />
 
               <ConsentNotice checked={consent} onChange={setConsent} />
 

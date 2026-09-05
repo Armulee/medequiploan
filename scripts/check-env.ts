@@ -36,7 +36,8 @@ if (!key) {
 if (!process.env.BLOB_READ_WRITE_TOKEN) {
   console.warn(
     '⚠️  ไม่พบ BLOB_READ_WRITE_TOKEN — รูปที่อัปโหลดจะถูกเก็บลงดิสก์ของเครื่องที่รัน ' +
-      'ซึ่งบน Vercel จะหายทุก cold start เชื่อม Blob store ก่อนใช้งานจริง'
+      'ซึ่งบน Vercel จะหายทุก cold start เชื่อม Blob store ก่อนใช้งานจริง\n' +
+      '   รูปบัตรประชาชนบังคับแนบทุกคำขอ ถ้ารูปหายคำขอเก่าจะตรวจสอบย้อนหลังไม่ได้'
   );
 }
 

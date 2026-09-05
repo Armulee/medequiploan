@@ -121,6 +121,16 @@ a:hover { text-decoration: underline; }
 /* Validation belongs beside the field it is about, not in a banner at the top
    of the card and not in a toast that covers the input. */
 .hint-error { color: var(--red); font-weight: 600; }
+/* A photo that may be unreadable: worth saying, not worth refusing. */
+.hint-warn { color: var(--orange-deep); font-weight: 600; }
+
+/* What is about to be uploaded, beside the button that replaces it. */
+.photo-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.photo-preview img {
+  width: 96px; height: 96px; flex-shrink: 0;
+  object-fit: cover; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--orange-bg);
+}
 
 /* Match by exclusion rather than listing types: an <input> with no explicit
    type attribute is still a text field, but `input[type=text]` does not match

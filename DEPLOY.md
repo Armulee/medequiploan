@@ -48,7 +48,11 @@
 | ที่เก็บรูป | Storage → Create → **Blob** |
 
 แล้วกด **Connect** ทั้งสองตัวเข้ากับ project — Vercel จะใส่ `DATABASE_URL` และ
-`BLOB_READ_WRITE_TOKEN` ให้อัตโนมัติ
+`BLOB_READ_WRITE_TOKEN` ให้อัตโนมัติ (redeploy หนึ่งครั้งให้ env ใหม่มีผล)
+
+**Blob ไม่ใช่ของเสริม** — รูปบัตรประชาชนบังคับแนบทุกคำขอ ถ้ายังไม่ได้ connect Blob store
+โค้ดจะ fallback ไปเขียนลงดิสก์ของ instance ซึ่งบน Vercel หายทุก cold start
+แปลว่าคำขอที่ส่งเมื่อวานจะเปิดรูปบัตรไม่ได้ในวันนี้ · ตรวจว่าตั้งค่าครบด้วย `npm run check-env`
 
 **ทำไมต้อง Singapore**: `vercel.json` ตรึง region ไว้ที่ `sin1` ซึ่งใกล้ประเทศไทยที่สุดเท่าที่ Vercel มี
 ถ้าฐานข้อมูลอยู่คนละทวีป ทุก query จะวิ่งข้ามโลกและช้าขึ้นหลายเท่า

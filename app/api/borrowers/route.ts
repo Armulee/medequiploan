@@ -74,9 +74,14 @@ export const POST = route(async (req: Request) => {
     throw new ApiError('กรุณายืนยันว่าได้แจ้งประกาศความเป็นส่วนตัว (PDPA) และผู้ยืมให้ความยินยอมแล้ว');
   }
 
-  // Optional, and the same photo the public form takes: what helps staff
-  // decide is a picture of the condition, not a copy of an ID card they are
-  // holding in their hand anyway. One less copy of an ID document stored.
+  // Required, same as the public form: the card photo is what makes a
+  // registration checkable afterwards, and staff read it before lending.
+  const idCard = form.get('id_card_photo');
+  if (!(idCard instanceof File) || idCard.size === 0) {
+    throw new ApiError('กรุณาแนบรูปบัตรประชาชนของผู้ยืม');
+  }
+
+  // Optional: a picture of the condition helps pick the right equipment.
   const photo = form.get('illness_photo');
   const hasPhoto = photo instanceof File && photo.size > 0;
 
@@ -85,6 +90,10 @@ export const POST = route(async (req: Request) => {
   if (existing) {
     throw new ApiError(`เลขบัตรประชาชนนี้ลงทะเบียนไว้แล้ว (รหัส ${existing.borrowerId})`, 409);
   }
+
+  const idCardPhotoId = await saveUpload('id_cards', idCard).catch((e) => {
+    throw new ApiError(e instanceof Error ? e.message : 'อัปโหลดรูปบัตรประชาชนไม่สำเร็จ');
+  });
 
   const illnessPhotoId = hasPhoto
     ? await saveUpload('illness_photos', photo).catch((e) => {
@@ -106,6 +115,7 @@ export const POST = route(async (req: Request) => {
       consentAcceptedAt: new Date(),
       consentVersion: CONSENT_VERSION,
       illnessDescription: str('illness_description'),
+      idCardPhotoId,
       illnessPhotoId,
       // Registered face to face rather than through the public form. It no
       // longer means an ID card was photographed — nothing asks for one.

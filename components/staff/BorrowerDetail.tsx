@@ -105,8 +105,9 @@ export default function BorrowerDetail({
           </h1>
           {/* Opened from the request queue this shows the decision. Opened
               from anywhere else there is no request, so it says how the
-              borrower got here instead — which is all `verified` records now
-              that registration no longer photographs an ID card. */}
+              borrower got here instead: `verified` means a staff member
+              registered them in person, not that the card has been checked —
+              both routes now carry a card photograph. */}
           {requestStatus ? (
             <span className={statusBadgeClass(requestStatus)}>{requestStatus}</span>
           ) : (
@@ -168,18 +169,27 @@ export default function BorrowerDetail({
         <div className="card">
           <h2>เอกสารแนบ</h2>
           <p style={{ color: 'var(--text-muted)', marginTop: -6 }}>
-            เป็นข้อมูลสุขภาพ เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ
+            เป็นข้อมูลส่วนบุคคลและข้อมูลสุขภาพ เห็นได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ · กดที่รูปเพื่อดูขนาดเต็ม
           </p>
           <div className="photo-grid">
             {borrower.id_card_photo_url && (
               <figure>
-                <img src={borrower.id_card_photo_url} alt="รูปบัตรประชาชน" />
-                <figcaption>รูปบัตรประชาชน</figcaption>
+                {/* A link, because reading the small print on a card in a
+                    220px column is not possible; /api/files checks the
+                    session either way. */}
+                <a href={borrower.id_card_photo_url} target="_blank" rel="noreferrer">
+                  <img src={borrower.id_card_photo_url} alt="รูปบัตรประชาชน" />
+                </a>
+                <figcaption>
+                  รูปบัตรประชาชน · เทียบกับเลขที่กรอกไว้: <strong>{borrower.national_id}</strong>
+                </figcaption>
               </figure>
             )}
             {borrower.illness_photo_url && (
               <figure>
-                <img src={borrower.illness_photo_url} alt="รูปอาการป่วย" />
+                <a href={borrower.illness_photo_url} target="_blank" rel="noreferrer">
+                  <img src={borrower.illness_photo_url} alt="รูปอาการป่วย" />
+                </a>
                 <figcaption>รูปอาการป่วย</figcaption>
               </figure>
             )}

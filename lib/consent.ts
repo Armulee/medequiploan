@@ -3,8 +3,13 @@
  * version string that is stored with their consent. When the wording changes,
  * bump the version — records then say which text each person actually agreed
  * to, which is the part that matters if anyone ever has to answer for it.
+ *
+ * 1.1 — the ID-card photograph became required, so the notice now names it in
+ * what is collected, says it is what identity is checked against, and says who
+ * can open it. Anyone who consented under 1.0 agreed to a text that did not
+ * mention it.
  */
-export const CONSENT_VERSION = '1.0';
+export const CONSENT_VERSION = '1.1';
 
 export const CONSENT_NOTICE = {
   title: 'ประกาศความเป็นส่วนตัว (PDPA)',
@@ -13,11 +18,11 @@ export const CONSENT_NOTICE = {
   sections: [
     {
       heading: 'ข้อมูลที่เก็บ',
-      body: 'ชื่อ-นามสกุล, เลขบัตรประจำตัวประชาชน, ที่อยู่, เบอร์โทรศัพท์, LINE ID (ถ้าให้), ข้อมูลอาการเจ็บป่วยและรูปภาพประกอบ',
+      body: 'ชื่อ-นามสกุล, เลขบัตรประจำตัวประชาชน, รูปถ่ายบัตรประจำตัวประชาชน, ที่อยู่, เบอร์โทรศัพท์, LINE ID (ถ้าให้), ข้อมูลอาการเจ็บป่วยและรูปภาพประกอบ (ถ้าให้)',
     },
     {
       heading: 'ใช้ทำอะไร',
-      body: 'ยืนยันตัวตนผู้ยืม, ติดต่อนัดหมายรับ-คืนอุปกรณ์, บันทึกประวัติการยืมเพื่อติดตามอุปกรณ์ และจัดทำสถิติภายในของศูนย์',
+      body: 'ยืนยันตัวตนผู้ยืมโดยเจ้าหน้าที่ตรวจสอบกับรูปบัตรประจำตัวประชาชนที่ท่านแนบมา, ติดต่อนัดหมายรับ-คืนอุปกรณ์, บันทึกประวัติการยืมเพื่อติดตามอุปกรณ์ และจัดทำสถิติภายในของศูนย์',
     },
     {
       heading: 'เก็บไว้นานแค่ไหน',
@@ -25,7 +30,7 @@ export const CONSENT_NOTICE = {
     },
     {
       heading: 'การเปิดเผยและความปลอดภัย',
-      body: 'ข้อมูลเข้าถึงได้เฉพาะเจ้าหน้าที่ของศูนย์ที่เข้าสู่ระบบแล้วเท่านั้น เลขบัตรประชาชนถูกเข้ารหัสก่อนจัดเก็บ รูปภาพไม่เปิดเผยต่อสาธารณะ และไม่มีการขายหรือส่งต่อข้อมูลให้บุคคลภายนอกเพื่อการตลาด',
+      body: 'ข้อมูลเข้าถึงได้เฉพาะเจ้าหน้าที่ของศูนย์ที่เข้าสู่ระบบแล้วเท่านั้น เลขบัตรประชาชนถูกเข้ารหัสก่อนจัดเก็บ รูปบัตรประชาชนและรูปอาการป่วยไม่เปิดเผยต่อสาธารณะและเปิดดูได้เฉพาะเจ้าหน้าที่ที่เข้าสู่ระบบ และไม่มีการขายหรือส่งต่อข้อมูลให้บุคคลภายนอกเพื่อการตลาด',
     },
     {
       heading: 'ที่ตั้งของข้อมูล',
